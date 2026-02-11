@@ -469,29 +469,45 @@
     elementoBotao.innerHTML = originalText;
 
     if (res && res.base64) {
-        const b64Data = res.base64;
-        const fileName = res.fileName || "checklist.pdf";
-        
-        // Verifica se é Safari ou iOS
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-        if (isSafari || isIOS) {
-            // No Safari/iOS, abrimos em uma nova aba para o usuário visualizar e salvar
-            const pdfWindow = window.open("");
-            if (pdfWindow) {
-                pdfWindow.document.write(
-                    `<title>${fileName}</title><iframe width='100%' height='100%' src='data:application/pdf;base64,${b64Data}'></iframe>`
-                );
-            } else {
-                alert("O bloqueador de pop-ups impediu a abertura do PDF. Por favor, autorize pop-ups para este site.");
+        try {
+            // 1. Converte Base64 para um Blob (Binary Large Object)
+            const byteCharacters = atob(res.base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
             }
-        } else {
-            // Método padrão de download (Chrome, Firefox, PC)
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+            // 2. Cria uma URL temporária para o Blob
+            const fileURL = URL.createObjectURL(blob);
+
+            // 3. Criamos o link de download
             const link = document.createElement('a');
-            link.href = 'data:application/pdf;base64,' + b64Data;
-            link.download = fileName;
-            link.click();
+            link.href = fileURL;
+            link.download = res.fileName || "checklist.pdf";
+
+            // 4. Truque para o Safari: Se for iOS, mudamos o target para abrir na mesma aba
+            // Isso evita o bloqueador de pop-ups, pois não abre nova janela
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            
+            if (isIOS) {
+                // No iPhone, ele vai abrir o PDF na aba atual. 
+                // O usuário visualiza e clica em compartilhar se quiser salvar.
+                window.location.href = fileURL;
+            } else {
+                // No Android/Chrome/PC, ele baixa direto.
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            // Limpa a memória após um tempo
+            setTimeout(() => URL.revokeObjectURL(fileURL), 100);
+
+        } catch (e) {
+            console.error("Erro ao processar PDF:", e);
+            alert("Erro ao processar o arquivo PDF.");
         }
     } else {
         alert("Erro ao gerar PDF.");

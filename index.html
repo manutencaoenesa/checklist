@@ -459,24 +459,44 @@
         }
 
         async function enviarParaGeradorPdf(lista, elementoBotao) {
-            const originalText = elementoBotao.innerHTML;
-            elementoBotao.disabled = true;
-            elementoBotao.innerHTML = "<span class='spinner-border spinner-border-sm'></span> Gerando...";
+    const originalText = elementoBotao.innerHTML;
+    elementoBotao.disabled = true;
+    elementoBotao.innerHTML = "<span class='spinner-border spinner-border-sm'></span> Gerando...";
 
-            const res = await api('gerarPdf', { lista: lista });
+    const res = await api('gerarPdf', { lista: lista });
 
-            elementoBotao.disabled = false;
-            elementoBotao.innerHTML = originalText;
+    elementoBotao.disabled = false;
+    elementoBotao.innerHTML = originalText;
 
-            if (res && res.base64) {
-                const link = document.createElement('a');
-                link.href = 'data:application/pdf;base64,' + res.base64;
-                link.download = res.fileName;
-                link.click();
+    if (res && res.base64) {
+        const b64Data = res.base64;
+        const fileName = res.fileName || "checklist.pdf";
+        
+        // Verifica se é Safari ou iOS
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (isSafari || isIOS) {
+            // No Safari/iOS, abrimos em uma nova aba para o usuário visualizar e salvar
+            const pdfWindow = window.open("");
+            if (pdfWindow) {
+                pdfWindow.document.write(
+                    `<title>${fileName}</title><iframe width='100%' height='100%' src='data:application/pdf;base64,${b64Data}'></iframe>`
+                );
             } else {
-                alert("Erro ao gerar PDF.");
+                alert("O bloqueador de pop-ups impediu a abertura do PDF. Por favor, autorize pop-ups para este site.");
             }
+        } else {
+            // Método padrão de download (Chrome, Firefox, PC)
+            const link = document.createElement('a');
+            link.href = 'data:application/pdf;base64,' + b64Data;
+            link.download = fileName;
+            link.click();
         }
+    } else {
+        alert("Erro ao gerar PDF.");
+    }
+}
 
         // --- LÓGICA DO CANVAS DE ASSINATURA ---
         let canvas = document.getElementById('canvas-assinatura');

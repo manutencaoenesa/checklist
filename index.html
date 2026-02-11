@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist de Segurança</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
+        
+        /* Containers */
+        #p-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .login-container { width: 100%; max-width: 400px; padding: 30px; background: #1e1e1e; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .nav-fixed { position: fixed; bottom: 0; width: 100%; background: #1e1e1e; border-top: 1px solid #333; display: none; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+        .page { display: none; padding-top: 20px; padding-bottom: 90px; }
+        
+        /* Inputs e Cores */
+        .form-control, .form-select { background-color: #2b2b2b !important; border: 1px solid #444 !important; color: #ffffff !important; }
+        input, select, option, textarea { color: #ffffff !important; }
+        .form-control::placeholder { color: #888 !important; opacity: 1; }
+        .form-control:focus, .form-select:focus { background-color: #333 !important; border-color: #0d6efd !important; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); }
+        .form-label { color: #bbbbbb !important; }
+        
+        /* Cards Específicos */
+        .card-custom { background-color: #1e1e1e; color: #ffffff; border: 1px solid #333; }
+        .question-card { background-color: #2b2b2b; border: 1px solid #444; color: white; }
+    </style>
+</head>
+<body>
+
+    <div id="p-login">
+        <div class="login-container">
+            <h4 class="text-center mb-4 fw-bold" style="color: #00e5ff;">Acesso Checklist Enesa</h4>
+            
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-uppercase">Matrícula</label>
+                <input type="text" id="login-mat" class="form-control form-control-lg" placeholder="80000XXX">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-uppercase">Data de Nascimento</label>
+                <input type="text" id="login-nasc" class="form-control form-control-lg" placeholder="DD/MM/AAAA" maxlength="10">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-uppercase">Selecione a Obra</label>
+                <select id="login-obra" class="form-select form-select-lg">
+                    <option value="">Carregando obras...</option>
+                </select>
+            </div>
+
+            <button id="btnEntrar" class="btn btn-primary w-100 btn-lg fw-bold" onclick="realizarLogin()">ENTRAR</button>
+        </div>
+    </div>
+
+    <div id="app-content" style="display: none;">
+        
+        <div id="p-formulario" class="page container">
+            <div class="card card-custom shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-2">
+                    <div>
+                        <h5 id="displayNome" class="mb-0 text-info fw-bold">Identificando...</h5>
+                        <small id="displayMatricula" style="color: #bbbbbb;"></small>
+                    </div>
+                    <span class="badge bg-primary" id="displayObra"></span>
+                </div>
+                
+                <div id="formCorpo">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Tipo de Equipamento:</label>
+                        <input type="text" id="tipo" list="lista-equipamentos" class="form-control" 
+                               placeholder="🔍 Buscar equipamento..." onchange="puxarPerguntas()">
+                        <datalist id="lista-equipamentos"></datalist>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Nº Patrimônio:</label>
+                        <input type="text" id="patri" class="form-control" placeholder="Digite o patrimônio ou TAG">
+                    </div>
+
+                    <div id="listaPerguntas" class="mb-4"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase text-white">Assinatura Digital:</label>
+                        <div class="bg-white rounded overflow-hidden" style="height: 150px; border: 2px solid #0d6efd;">
+                            <canvas id="canvas-assinatura" style="width: 100%; height: 100%; cursor: crosshair;"></canvas>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger mt-2 fw-bold" onclick="limparAssinatura()">Limpar Assinatura</button>
+                    </div>
+
+                    <button id="btnEnviar" class="btn btn-primary w-100 btn-lg mt-3 shadow fw-bold" onclick="enviar()">ENVIAR CHECKLIST</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="p-historico" class="page container">
+            <div class="card card-custom shadow-sm p-3">
+                <h5 class="text-info mb-3 text-uppercase fw-bold">Histórico e Relatórios</h5>
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="fw-bold text-white-50" style="font-size: 0.75rem;">Início:</label>
+                        <input type="date" id="filtro-inicio" class="form-control form-control-sm" style="color-scheme: dark;">
+                    </div>
+                    <div class="col-6">
+                        <label class="fw-bold text-white-50" style="font-size: 0.75rem;">Fim:</label>
+                        <input type="date" id="filtro-fim" class="form-control form-control-sm" style="color-scheme: dark;">
+                    </div>
+                    <div class="col-12">
+                        <input type="text" id="filtro-busca" class="form-control form-control-sm" placeholder="🔍 Buscar Patrimônio ou Equipamento...">
+                    </div>
+                    
+                    <div class="col-12 mt-2 d-grid gap-2">
+                        <button class="btn btn-info btn-sm fw-bold py-2" onclick="carregarHistorico()">🔄 ATUALIZAR LISTA</button>
+                        <button id="btnAuditoria" class="btn btn-success btn-sm fw-bold py-2" onclick="gerarPdfFiltroCompleto()" style="display: none;">📊 GERAR PDF COMPLETO</button>
+                    </div>
+                </div>
+
+                <div id="listaHistorico">
+                    <p class="text-center text-white-50 small">Filtre os dados para visualizar.</p>
+                </div>
+            </div>
+        </div>
+
+        <nav id="main-nav" class="nav-fixed">
+            <button class="btn btn-outline-light border-0" onclick="showPage('p-formulario')">📝 Novo</button>
+            <button class="btn btn-outline-light border-0" onclick="showPage('p-historico')">📋 Histórico</button>
+            <button class="btn btn-outline-danger border-0" onclick="fazerLogout()">🚪 Sair</button>
+        </nav>
+    </div>
+
+    <script>
+        // =======================================================
+        // ⚠️ IMPORTANTE: COLE SUA URL DO GOOGLE APPS SCRIPT AQUI
+        // =======================================================
+        const URL_API = "https://script.google.com/macros/s/AKfycbw2RvbpigVptn_U31RXMlV_UMVgh2idx8Kq_s7cRt4BTrQRUQxUd1Wr2U0ZnEKb167i/exec"; 
+        
+        window.sessionUser = null;
+        let dadosCarregadosGlobal = {};
+
+        // --- FUNÇÃO CENTRAL DE API (SUBSTITUI O GOOGLE.SCRIPT.RUN) ---
+        async function api(action, data = {}) {
+            const payload = { action: action, ...data };
+            try {
+                const response = await fetch(URL_API, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error("Erro na API:", error);
+                alert("Erro de conexão com a planilha. Verifique a internet.");
+                return null;
+            }
+        }
+
+        // --- INICIALIZAÇÃO E LOGIN ---
+        window.onload = () => {
+            carregarObras();
+        };
+
+        async function carregarObras() {
+            const obras = await api('getObras');
+            let sel = document.getElementById('login-obra');
+            sel.innerHTML = '<option value="">Selecione a obra...</option>';
+            if(obras) {
+                obras.forEach(o => sel.innerHTML += `<option value="${o}">${o}</option>`);
+            }
+        }
+
+        async function realizarLogin() {
+            const mat = document.getElementById('login-mat').value;
+            const nasc = document.getElementById('login-nasc').value;
+            const obra = document.getElementById('login-obra').value;
+            const btn = document.getElementById('btnEntrar');
+
+            if(mat.length < 3 || nasc.length < 10 || !obra) {
+                alert("Preencha todos os campos corretamente.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Validando...";
+
+            const res = await api('login', { mat: mat, nasc: nasc });
+
+            if(res && res.success) {
+                window.sessionUser = { nome: res.nome, matricula: mat.trim(), obra: obra };
+                document.getElementById('p-login').style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+                document.getElementById('main-nav').style.display = 'flex';
+                showPage('p-formulario');
+            } else {
+                alert("Matrícula ou Data de Nascimento incorretos.");
+                btn.disabled = false;
+                btn.innerText = "ENTRAR";
+            }
+        }
+
+        // --- NAVEGAÇÃO E MÁSCARAS ---
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+            if(id === 'p-formulario') configurarFormulario();
+            //if(id === 'p-historico') carregarHistorico(); // Opcional carregar automático
+        }
+
+        document.getElementById('login-nasc').addEventListener('input', function (e) {
+            let v = e.target.value.replace(/\D/g, '');
+            if (v.length > 8) v = v.slice(0, 8);
+            if (v.length > 4) v = v.replace(/^(\d{2})(\d{2})(\d{0,4})/, '$1/$2/$3');
+            else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,2})/, '$1/$2');
+            e.target.value = v;
+        });
+
+        function fazerLogout() {
+            if(confirm("Deseja realmente sair?")) {
+                window.sessionUser = null;
+                document.getElementById('login-mat').value = "";
+                document.getElementById('login-nasc').value = "";
+                document.getElementById('btnEntrar').disabled = false;
+                document.getElementById('btnEntrar').innerText = "ENTRAR";
+                document.getElementById('app-content').style.display = 'none';
+                document.getElementById('main-nav').style.display = 'none';
+                document.getElementById('p-login').style.display = 'flex';
+                document.getElementById('listaHistorico').innerHTML = "<p class='text-center text-white-50 small'>Filtre os dados para visualizar.</p>";
+            }
+        }
+
+        // --- LÓGICA DO FORMULÁRIO ---
+        async function configurarFormulario() {
+            if (window.sessionUser) {
+                document.getElementById('displayNome').innerText = sessionUser.nome;
+                document.getElementById('displayMatricula').innerText = "MAT: " + sessionUser.matricula;
+                document.getElementById('displayObra').innerText = sessionUser.obra || "";
+            }
+            
+            // Carregar Tipos de Equipamento
+            const tipos = await api('getTipos');
+            let datalist = document.getElementById('lista-equipamentos');
+            datalist.innerHTML = '';
+            if (tipos) {
+                tipos.forEach(t => {
+                    let option = document.createElement('option');
+                    option.value = t;
+                    datalist.appendChild(option);
+                });
+            }
+            ajustarCanvas();
+        }
+
+        async function puxarPerguntas() {
+            let t = document.getElementById('tipo').value;
+            if(!t) { document.getElementById('listaPerguntas').innerHTML = ""; return; }
+            
+            document.getElementById('listaPerguntas').innerHTML = "<p class='text-center text-white-50'>Carregando itens...</p>";
+            
+            const pergs = await api('getPerguntas', { tipo: t });
+            
+            let div = document.getElementById('listaPerguntas');
+            div.innerHTML = "<h6 class='fw-bold mb-3 text-info text-uppercase small'>Itens de Inspeção:</h6>";
+            
+            if (!pergs || pergs.length === 0) {
+                div.innerHTML += "<p class='text-warning small'>Nenhuma pergunta encontrada.</p>";
+                return;
+            }
+
+            pergs.forEach((p, i) => {
+                div.innerHTML += `
+                    <div class="card question-card mb-2 p-3">
+                        <p class="mb-3 small fw-bold">${p}</p>
+                        <div class="d-flex gap-4 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="p${i}ok" onclick="selecionarOpcao(this, 'p${i}nok', ${i})">
+                                <label class="form-check-label small text-white" for="p${i}ok">Conforme (OK)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="p${i}nok" onclick="selecionarOpcao(this, 'p${i}ok', ${i})">
+                                <label class="form-check-label small text-danger fw-bold" for="p${i}nok">Não Conforme</label>
+                            </div>
+                        </div>
+                        <div id="campoMotivo${i}" style="display: none;" class="mt-2">
+                            <label class="x-small text-warning fw-bold" style="font-size: 0.75rem;">Descreva o motivo da falha:</label>
+                            <textarea id="motivo${i}" class="form-control form-control-sm bg-dark text-white border-warning" rows="2"></textarea>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function selecionarOpcao(source, otherId, index) {
+            if (source.checked) {
+                document.getElementById(otherId).checked = false;
+                const campoMotivo = document.getElementById(`campoMotivo${index}`);
+                campoMotivo.style.display = (source.id.includes('nok')) ? 'block' : 'none';
+                if (!source.id.includes('nok')) document.getElementById(`motivo${index}`).value = "";
+            } else {
+                document.getElementById(`campoMotivo${index}`).style.display = 'none';
+            }
+        }
+
+        async function enviar() {
+            let patrimonio = document.getElementById('patri').value;
+            let tipo = document.getElementById('tipo').value;
+            
+            if(!tipo || !patrimonio) { alert("Preencha o Tipo de Equipamento e o Patrimônio."); return; }
+
+            let resps = [];
+            let validado = true;
+            let cards = document.querySelectorAll('.question-card');
+            
+            cards.forEach((card, i) => {
+                let ok = document.getElementById(`p${i}ok`).checked;
+                let nok = document.getElementById(`p${i}nok`).checked;
+                let motivo = document.getElementById(`motivo${i}`).value.trim();
+
+                if(!ok && !nok) {
+                    validado = false;
+                    card.style.borderColor = "red";
+                } else if (nok && motivo === "") {
+                    validado = false;
+                    card.style.borderColor = "#ffc107";
+                    alert(`Descreva o motivo da falha no item: ${card.querySelector('p').innerText}`);
+                } else {
+                    card.style.borderColor = "#444";
+                    resps.push({
+                        pergunta: card.querySelector('p').innerText,
+                        resposta: ok ? "OK" : "Não OK",
+                        motivo: nok ? motivo : ""
+                    });
+                }
+            });
+
+            if(!validado) return;
+            const blank = document.createElement('canvas');
+            blank.width = canvas.width; blank.height = canvas.height;
+            if (canvas.toDataURL() === blank.toDataURL()) { alert("A assinatura é obrigatória."); return; }
+
+            document.getElementById('btnEnviar').disabled = true;
+            document.getElementById('btnEnviar').innerText = "Enviando...";
+
+            let payload = {
+                matricula: sessionUser.matricula, nome: sessionUser.nome, obra: sessionUser.obra,
+                tipoEquipamento: tipo, patrimonio: patrimonio, respostas: resps, assinatura: canvas.toDataURL()
+            };
+
+            const result = await api('salvar', { payload: payload });
+            
+            if(result && result.status === "OK") {
+                finalizarEnvio();
+            } else {
+                alert("Erro ao salvar. Tente novamente.");
+                document.getElementById('btnEnviar').disabled = false;
+            }
+        }
+
+        function finalizarEnvio() {
+            document.getElementById('patri').value = "";
+            document.getElementById('tipo').value = "";
+            document.getElementById('listaPerguntas').innerHTML = "";
+            limparAssinatura();
+            const btn = document.getElementById('btnEnviar');
+            btn.disabled = false;
+            btn.innerText = "ENVIAR CHECKLIST";
+            alert("✅ Checklist enviado e salvo com sucesso!");
+            window.scrollTo(0, 0);
+        }
+
+        // --- LÓGICA DO HISTÓRICO ---
+        async function carregarHistorico() {
+            const div = document.getElementById('listaHistorico');
+            const btnAuditoria = document.getElementById('btnAuditoria');
+            
+            if (!sessionUser) { div.innerHTML = "Faça login."; return; }
+
+            const filtros = {
+                matricula: sessionUser.matricula,
+                dataInicio: document.getElementById('filtro-inicio').value,
+                dataFim: document.getElementById('filtro-fim').value,
+                busca: document.getElementById('filtro-busca').value
+            };
+
+            div.innerHTML = "<div class='text-center my-3'><div class='spinner-border spinner-border-sm text-info'></div></div>";
+
+            const dados = await api('historico', { filtros: filtros });
+
+            if (!dados || dados.length === 0 || dados.error) {
+                div.innerHTML = "<p class='text-center text-white-50 my-4'>Nenhum registro encontrado.</p>";
+                btnAuditoria.style.display = 'none';
+                return;
+            }
+
+            // Agrupar (A lógica já vem semi-pronta do backend, mas garantindo agrupamento)
+            let agrupado = {};
+            dados.forEach(r => {
+                if (!agrupado[r.grupoId]) {
+                    agrupado[r.grupoId] = { ...r, itens: [] };
+                }
+                agrupado[r.grupoId].itens.push({ p: r.pergunta, r: r.resposta, m: r.motivo });
+            });
+
+            dadosCarregadosGlobal = agrupado;
+            btnAuditoria.style.display = 'block';
+
+            let html = "";
+            for (let id in agrupado) {
+                let obj = agrupado[id];
+                let temFalha = obj.itens.some(i => i.r !== "OK" && i.r !== "Conforme (OK)");
+                let safeId = id.replace(/[^a-zA-Z0-9]/g, '');
+                
+                html += `
+                  <div class="card mb-3 p-2" style="background-color: #2b2b2b; border: 1px solid #444; border-left: 5px solid ${temFalha ? '#dc3545' : '#198754'}; color: white;">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="fw-bold text-info small">${obj.equipamento}</span>
+                      <span style="font-size: 0.7rem; color: #bbbbbb;">${obj.data}</span>
+                    </div>
+                    <div class="small mb-2" style="color: #ffffff;">Patr: <strong>${obj.patrimonio}</strong></div>
+                    <div class="small mb-2" style="color: #bbbbbb;">Obra: ${obj.obra}</div>
+                    
+                    <button class="btn btn-dark btn-sm w-100 mb-2 py-1 fw-bold" onclick="toggleDetalhes('${safeId}')" style="font-size: 0.75rem; border: 1px solid #555; color: white;">VER ITENS (${obj.itens.length})</button>
+                    
+                    <div id="detalhe-${safeId}" style="display:none;" class="bg-black p-2 rounded mb-2 border border-secondary">
+                      ${obj.itens.map(i => `
+                        <div class="border-bottom border-secondary py-1" style="font-size: 0.75rem; color: #ffffff;">
+                          <div class="d-flex justify-content-between">
+                            <span class="pe-2">${i.p}</span>
+                            <b class="${(i.r === 'OK' || i.r === 'Conforme (OK)') ? 'text-success' : 'text-danger'}">${i.r}</b>
+                          </div>
+                          ${i.m ? `<div class="text-warning fw-bold" style="font-size: 0.7rem;">Obs: ${i.m}</div>` : ''}
+                        </div>
+                      `).join('')}
+                      <div class="mt-2 text-center">
+                          <p class="text-white-50 mb-1" style="font-size: 0.6rem;">Assinatura:</p>
+                          <img src="${obj.assinatura}" style="width: 120px; background: white; border-radius: 4px;">
+                      </div>
+                    </div>
+
+                    <button class="btn btn-outline-primary btn-sm w-100 fw-bold" onclick='prepararPdfIndividual(this, "${id}")'>📄 GERAR ESTE PDF</button>
+                  </div>`;
+            }
+            div.innerHTML = html;
+        }
+
+        function toggleDetalhes(id) {
+            const d = document.getElementById('detalhe-' + id);
+            if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // --- LÓGICA DO PDF ---
+        async function gerarPdfFiltroCompleto() {
+            const lista = Object.values(dadosCarregadosGlobal);
+            if (lista.length === 0) return;
+            enviarParaGeradorPdf(lista, document.getElementById('btnAuditoria'));
+        }
+
+        async function prepararPdfIndividual(elemento, id) {
+            const obj = dadosCarregadosGlobal[id];
+            enviarParaGeradorPdf([obj], elemento);
+        }
+
+        async function enviarParaGeradorPdf(lista, elementoBotao) {
+            const originalText = elementoBotao.innerHTML;
+            elementoBotao.disabled = true;
+            elementoBotao.innerHTML = "<span class='spinner-border spinner-border-sm'></span> Gerando...";
+
+            const res = await api('gerarPdf', { lista: lista });
+
+            elementoBotao.disabled = false;
+            elementoBotao.innerHTML = originalText;
+
+            if (res && res.base64) {
+                const link = document.createElement('a');
+                link.href = 'data:application/pdf;base64,' + res.base64;
+                link.download = res.fileName;
+                link.click();
+            } else {
+                alert("Erro ao gerar PDF.");
+            }
+        }
+
+        // --- LÓGICA DO CANVAS DE ASSINATURA ---
+        let canvas = document.getElementById('canvas-assinatura');
+        let ctx = canvas.getContext('2d');
+        let desenhando = false;
+
+        function ajustarCanvas() {
+            const rect = canvas.parentNode.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = 150;
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+        }
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left,
+                y: (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top
+            };
+        }
+
+        function iniciarDesenho(e) { desenhando = true; const pos = getMousePos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
+        function desenhar(e) { if (!desenhando) return; e.preventDefault(); const pos = getMousePos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); }
+        function pararDesenho() { desenhando = false; }
+        function limparAssinatura() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+        canvas.addEventListener('mousedown', iniciarDesenho);
+        canvas.addEventListener('mousemove', desenhar);
+        window.addEventListener('mouseup', pararDesenho);
+        canvas.addEventListener('touchstart', iniciarDesenho, {passive: false});
+        canvas.addEventListener('touchmove', desenhar, {passive: false});
+        canvas.addEventListener('touchend', pararDesenho);
+    </script>
+</body>
+</html>

@@ -75,7 +75,8 @@
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-uppercase">Nº Patrimônio:</label>
-                        <input type="text" id="patri" class="form-control" placeholder="Digite o patrimônio ou TAG">
+                        <input type="text" id="patri" list="lista-patrimonios" class="form-control" placeholder="Digite ou selecione o patrimônio">
+                        <datalist id="lista-patrimonios"></datalist>
                     </div>
 
                     <div id="listaPerguntas" class="mb-4"></div>
@@ -117,7 +118,7 @@
                 </div>
 
                 <div id="listaHistorico">
-                    <p class="text-center text-white-50 small">Filtre os dados para visualizar.</p>
+                    <p class="text-center text-white-50 small">Carregando...</p>
                 </div>
             </div>
         </div>
@@ -138,7 +139,7 @@
         window.sessionUser = null;
         let dadosCarregadosGlobal = {};
 
-        // --- FUNÇÃO CENTRAL DE API (SUBSTITUI O GOOGLE.SCRIPT.RUN) ---
+        // --- FUNÇÃO CENTRAL DE API ---
         async function api(action, data = {}) {
             const payload = { action: action, ...data };
             try {
@@ -202,8 +203,14 @@
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
             document.getElementById(id).style.display = 'block';
-            if(id === 'p-formulario') configurarFormulario();
-            //if(id === 'p-historico') carregarHistorico(); // Opcional carregar automático
+            
+            if(id === 'p-formulario') {
+                configurarFormulario();
+            }
+            // MODIFICADO: Carrega o histórico automaticamente ao entrar na aba
+            if(id === 'p-historico') {
+                carregarHistorico(); 
+            }
         }
 
         document.getElementById('login-nasc').addEventListener('input', function (e) {
@@ -247,7 +254,37 @@
                     datalist.appendChild(option);
                 });
             }
+            
+            // NOVO: Carregar histórico de patrimônios salvos localmente
+            carregarPatrimoniosLocais();
+            
             ajustarCanvas();
+        }
+
+        // --- FUNÇÕES DE PATRIMÔNIO (LOCAL STORAGE) ---
+        function carregarPatrimoniosLocais() {
+            // Recupera lista do celular
+            let saved = JSON.parse(localStorage.getItem('hist_patrimonios')) || [];
+            let datalist = document.getElementById('lista-patrimonios');
+            datalist.innerHTML = '';
+            // Cria as opções na lista
+            saved.forEach(p => {
+                let option = document.createElement('option');
+                option.value = p;
+                datalist.appendChild(option);
+            });
+        }
+
+        function salvarPatrimonioLocal(novoPatrimonio) {
+            if (!novoPatrimonio) return;
+            let saved = JSON.parse(localStorage.getItem('hist_patrimonios')) || [];
+            // Se não existir na lista, adiciona
+            if (!saved.includes(novoPatrimonio)) {
+                saved.push(novoPatrimonio);
+                saved.sort(); // Mantém organizado
+                // Salva de volta
+                localStorage.setItem('hist_patrimonios', JSON.stringify(saved));
+            }
         }
 
         async function puxarPerguntas() {
@@ -347,6 +384,8 @@
             const result = await api('salvar', { payload: payload });
             
             if(result && result.status === "OK") {
+                // Salva o patrimônio na memória local para usar depois
+                salvarPatrimonioLocal(patrimonio);
                 finalizarEnvio();
             } else {
                 alert("Erro ao salvar. Tente novamente.");
@@ -364,6 +403,9 @@
             btn.innerText = "ENVIAR CHECKLIST";
             alert("✅ Checklist enviado e salvo com sucesso!");
             window.scrollTo(0, 0);
+            
+            // Atualiza a lista de sugestões
+            carregarPatrimoniosLocais();
         }
 
         // --- LÓGICA DO HISTÓRICO ---
@@ -390,7 +432,6 @@
                 return;
             }
 
-            // Agrupar (A lógica já vem semi-pronta do backend, mas garantindo agrupamento)
             let agrupado = {};
             dados.forEach(r => {
                 if (!agrupado[r.grupoId]) {
@@ -435,7 +476,7 @@
                       </div>
                     </div>
 
-                    <button class="btn btn-outline-primary btn-sm w-100 fw-bold" onclick='prepararPdfIndividual(this, "${id}")'>📄 GERAR ESTE PDF</button>
+                    <button class="btn btn-outline-primary btn-sm w-100 fw-bold" onclick='prepararPdfIndividual(this, "${id}")'>📄 COMPARTILHAR PDF</button>
                   </div>`;
             }
             div.innerHTML = html;
@@ -446,7 +487,7 @@
             if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
         }
 
-        // --- LÓGICA DO PDF ---
+        // --- LÓGICA DO PDF (CORRIGIDO PARA WHATSAPP/IOS) ---
         async function gerarPdfFiltroCompleto() {
             const lista = Object.values(dadosCarregadosGlobal);
             if (lista.length === 0) return;
@@ -459,60 +500,62 @@
         }
 
         async function enviarParaGeradorPdf(lista, elementoBotao) {
-    const originalText = elementoBotao.innerHTML;
-    elementoBotao.disabled = true;
-    elementoBotao.innerHTML = "<span class='spinner-border spinner-border-sm'></span> Gerando...";
+            const originalText = elementoBotao.innerHTML;
+            elementoBotao.disabled = true;
+            elementoBotao.innerHTML = "<span class='spinner-border spinner-border-sm'></span> Gerando...";
 
-    const res = await api('gerarPdf', { lista: lista });
+            const res = await api('gerarPdf', { lista: lista });
 
-    elementoBotao.disabled = false;
-    elementoBotao.innerHTML = originalText;
+            elementoBotao.disabled = false;
+            elementoBotao.innerHTML = originalText;
 
-    if (res && res.base64) {
-        try {
-            // 1. Converte Base64 para um Blob (Binary Large Object)
-            const byteCharacters = atob(res.base64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'application/pdf' });
+            if (res && res.base64) {
+                try {
+                    // Prepara o arquivo PDF
+                    const byteCharacters = atob(res.base64);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    
+                    // Define o nome correto do arquivo (Ex: Checklist_Patrimonio_01.pdf)
+                    let nomeDoc = res.fileName || "Checklist.pdf";
+                    // Se for individual, tenta colocar o patrimônio no nome
+                    if(lista.length === 1 && lista[0].patrimonio) {
+                         nomeDoc = `Checklist_${lista[0].patrimonio}.pdf`.replace(/[^a-z0-9_\-\.]/gi, '_');
+                    }
 
-            // 2. Cria uma URL temporária para o Blob
-            const fileURL = URL.createObjectURL(blob);
+                    const blob = new Blob([byteArray], { type: 'application/pdf' });
+                    const file = new File([blob], nomeDoc, { type: 'application/pdf' });
 
-            // 3. Criamos o link de download
-            const link = document.createElement('a');
-            link.href = fileURL;
-            link.download = res.fileName || "checklist.pdf";
+                    // Tenta usar o compartilhamento nativo (iOS/Android Moderno)
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: nomeDoc,
+                            text: 'Segue o Checklist realizado.'
+                        });
+                    } else {
+                        // Fallback: Download Direto (Computador/Android Antigo)
+                        const fileURL = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = fileURL;
+                        link.download = nomeDoc;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        setTimeout(() => URL.revokeObjectURL(fileURL), 100);
+                    }
 
-            // 4. Truque para o Safari: Se for iOS, mudamos o target para abrir na mesma aba
-            // Isso evita o bloqueador de pop-ups, pois não abre nova janela
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            
-            if (isIOS) {
-                // No iPhone, ele vai abrir o PDF na aba atual. 
-                // O usuário visualiza e clica em compartilhar se quiser salvar.
-                window.location.href = fileURL;
+                } catch (e) {
+                    console.error("Erro ao processar PDF:", e);
+                    alert("Não foi possível abrir o compartilhamento. Tente novamente.");
+                }
             } else {
-                // No Android/Chrome/PC, ele baixa direto.
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                alert("Erro ao gerar PDF.");
             }
-
-            // Limpa a memória após um tempo
-            setTimeout(() => URL.revokeObjectURL(fileURL), 100);
-
-        } catch (e) {
-            console.error("Erro ao processar PDF:", e);
-            alert("Erro ao processar o arquivo PDF.");
         }
-    } else {
-        alert("Erro ao gerar PDF.");
-    }
-}
 
         // --- LÓGICA DO CANVAS DE ASSINATURA ---
         let canvas = document.getElementById('canvas-assinatura');

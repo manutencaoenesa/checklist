@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enesa - Checklist de Equipamentos</title>
+    <title>Enesa - Gestão de Ativos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Paleta Corporativa Moderna (Slate Dark Mode) */
+        /* Paleta Corporativa Moderna de Alto Contraste */
         :root {
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
-            --border-color: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --brand-blue: #0284c7;
-            --brand-blue-hover: #0369a1;
-            --success: #10b981;
-            --danger: #ef4444;
+            --bg-body: #0f172a;      /* Fundo muito escuro */
+            --bg-card: #1e293b;      /* Fundo dos cards (grafite) */
+            --border-color: #334155; /* Bordas suaves */
+            --text-main: #ffffff;    /* Texto Principal BRANCO */
+            --text-muted: #cbd5e1;   /* Texto Secundário (Cinza Gelo) */
+            --brand-blue: #0ea5e9;   /* Azul claro para botões e links */
+            --brand-blue-hover: #0284c7;
+            --success: #10b981;      /* Verde vibrante */
+            --danger: #ef4444;       /* Vermelho vibrante */
         }
 
         body { 
@@ -26,43 +26,83 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* Containers e Layout */
+        /* Layout e Containers */
         #p-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
         .login-container { width: 100%; max-width: 420px; padding: 40px 30px; background: var(--bg-card); border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid var(--border-color); }
-        .nav-fixed { position: fixed; bottom: 0; width: 100%; background: var(--bg-card); border-top: 1px solid var(--border-color); display: none; justify-content: space-around; padding: 12px 0; z-index: 1000; box-shadow: 0 -4px 15px rgba(0,0,0,0.3); }
-        .nav-fixed button { font-size: 0.9rem; font-weight: 600; padding: 8px 20px; border-radius: 8px; transition: all 0.2s; }
-        .page { display: none; padding-top: 25px; padding-bottom: 100px; max-width: 600px; margin: 0 auto; }
+        .page { display: none; padding-top: 20px; padding-bottom: 100px; max-width: 600px; margin: 0 auto; }
         
-        /* Inputs e Formulários */
+        /* Navegação Inferior */
+        .nav-fixed { position: fixed; bottom: 0; width: 100%; background: var(--bg-card); border-top: 1px solid var(--border-color); display: none; justify-content: space-around; padding: 12px 0; z-index: 1000; box-shadow: 0 -4px 15px rgba(0,0,0,0.5); }
+        .nav-fixed button { font-size: 0.9rem; font-weight: 600; padding: 8px 20px; border-radius: 8px; transition: all 0.2s; color: var(--text-muted); }
+        .nav-fixed button.active { color: var(--brand-blue); background: rgba(14, 165, 233, 0.1); }
+        
+        /* Tipografia de Alto Contraste */
+        .form-label, h1, h2, h3, h4, h5, h6, p, span { color: var(--text-main) !important; }
+        .text-muted-custom { color: var(--text-muted) !important; font-size: 0.85rem;}
+        
+        /* Inputs */
         .form-control, .form-select { 
             background-color: var(--bg-body) !important; 
             border: 1px solid var(--border-color) !important; 
             color: var(--text-main) !important; 
-            border-radius: 8px;
-            padding: 12px 15px;
+            border-radius: 8px; padding: 12px 15px;
         }
-        .form-control::placeholder { color: var(--text-muted) !important; opacity: 1; }
-        .form-control:focus, .form-select:focus { 
-            border-color: var(--brand-blue) !important; 
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25) !important; 
+        .form-control:focus, .form-select:focus { border-color: var(--brand-blue) !important; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25) !important; }
+        
+        /* Cards de Equipamento (Dashboard) */
+        .card-equip { 
+            background-color: var(--bg-card); border: 1px solid var(--border-color); 
+            border-radius: 12px; padding: 16px; margin-bottom: 15px; position: relative;
+            border-left: 6px solid var(--danger); /* Padrão: Vermelho (Pendente) */
+            cursor: pointer; transition: transform 0.2s;
         }
-        .form-label { color: var(--text-muted) !important; font-size: 0.8rem; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .card-equip:active { transform: scale(0.98); }
+        .card-equip.concluido { border-left-color: var(--success); } /* Verde (Feito) */
         
-        /* Cards */
-        .card-custom { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; }
-        .question-card { background-color: var(--bg-body); border: 1px solid var(--border-color); border-radius: 8px; transition: border-color 0.3s; }
+        /* Botão Lixeira */
+        .btn-lixeira {
+            position: absolute; top: 12px; right: 12px;
+            background: rgba(239, 68, 68, 0.1); color: var(--danger);
+            border: none; border-radius: 6px; padding: 5px 10px; font-size: 1.2rem; z-index: 10;
+        }
         
+        /* FAB - Botão Flutuante + */
+        .fab {
+            position: fixed; bottom: 80px; right: 20px;
+            width: 60px; height: 60px; background-color: var(--brand-blue); color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer; z-index: 999;
+            border: none; transition: background-color 0.3s;
+        }
+        .fab:hover { background-color: var(--brand-blue-hover); }
+
+        /* Barra de Progresso */
+        .progress-container { background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+        .progress { height: 10px; background-color: var(--bg-body); border-radius: 5px; overflow: hidden; }
+        .progress-bar { background-color: var(--success); transition: width 0.4s ease; }
+
+        /* Modais Customizados */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); display: none; align-items: center; justify-content: center;
+            z-index: 2000; padding: 20px; backdrop-filter: blur(3px);
+        }
+        .modal-box {
+            background: var(--bg-card); width: 100%; max-width: 400px;
+            border-radius: 16px; padding: 24px; border: 1px solid var(--border-color);
+            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .modal-close {
+            position: absolute; top: 15px; right: 15px; background: none; border: none;
+            color: var(--text-muted); font-size: 1.5rem; line-height: 1; cursor: pointer;
+        }
+
         /* Botões */
-        .btn-primary { background-color: var(--brand-blue); border-color: var(--brand-blue); border-radius: 8px; padding: 12px; }
-        .btn-primary:hover, .btn-primary:focus { background-color: var(--brand-blue-hover); border-color: var(--brand-blue-hover); }
-        
-        /* Cabeçalho App */
-        .app-header { border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; }
-        .badge-obra { background-color: rgba(2, 132, 199, 0.2); color: #38bdf8; border: 1px solid var(--brand-blue); border-radius: 6px; padding: 6px 12px; font-weight: 600; font-size: 0.75rem; }
+        .btn-primary { background-color: var(--brand-blue); border-color: var(--brand-blue); font-weight: bold; }
+        .btn-success { background-color: var(--success); border-color: var(--success); font-weight: bold; }
 
         /* Canvas */
-        .canvas-container { background: #ffffff; border-radius: 8px; border: 2px dashed var(--border-color); overflow: hidden; height: 160px; position: relative; }
-        .canvas-container.active { border-color: var(--brand-blue); border-style: solid; }
+        .canvas-container { background: #ffffff; border-radius: 8px; border: 2px dashed var(--border-color); height: 160px; position: relative; }
     </style>
 </head>
 <body>
@@ -70,198 +110,153 @@
     <div id="p-login">
         <div class="login-container">
             <div class="text-center mb-4">
-                <h3 class="fw-bold" style="color: var(--text-main); letter-spacing: 1px;">ENESA</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">Portal de Inspeção e Checklist</p>
+                <h3 class="fw-bold" style="color: var(--brand-blue); letter-spacing: 1px;">ENESA</h3>
+                <p class="text-muted-custom">Gestão e Inspeção de Ativos</p>
             </div>
             
             <div class="mb-3">
-                <label class="form-label fw-bold text-uppercase">Matrícula</label>
-                <input type="text" id="login-mat" class="form-control form-control-lg" placeholder="Ex: 80000XXX">
+                <label class="form-label fw-bold">MATRÍCULA</label>
+                <input type="text" id="login-mat" class="form-control" placeholder="Ex: 80000XXX">
             </div>
-
             <div class="mb-3">
-                <label class="form-label fw-bold text-uppercase">Data de Nascimento</label>
-                <input type="text" id="login-nasc" class="form-control form-control-lg" placeholder="DD/MM/AAAA" maxlength="10">
+                <label class="form-label fw-bold">DATA DE NASCIMENTO</label>
+                <input type="text" id="login-nasc" class="form-control" placeholder="DD/MM/AAAA" maxlength="10">
             </div>
-
             <div class="mb-4">
-                <label class="form-label fw-bold text-uppercase">Obra / Contrato</label>
-                <select id="login-obra" class="form-select form-select-lg">
+                <label class="form-label fw-bold">OBRA / CONTRATO</label>
+                <select id="login-obra" class="form-select">
                     <option value="">Carregando...</option>
                 </select>
             </div>
-
-            <button id="btnEntrar" class="btn btn-primary w-100 btn-lg fw-bold mt-2" onclick="realizarLogin()">ACESSAR SISTEMA</button>
+            <button id="btnEntrar" class="btn btn-primary w-100 btn-lg" onclick="realizarLogin()">ACESSAR SISTEMA</button>
         </div>
     </div>
 
-    <div id="app-content" style="display: none;">
-        
-        <div id="p-formulario" class="page container">
-            <div class="card card-custom shadow-lg p-4">
-                <div class="d-flex justify-content-between align-items-center app-header">
-                    <div>
-                        <h5 id="displayNome" class="mb-1 fw-bold" style="color: var(--text-main);">Identificando...</h5>
-                        <small id="displayMatricula" style="color: var(--text-muted); font-weight: 500;"></small>
-                    </div>
-                    <span class="badge-obra" id="displayObra"></span>
-                </div>
-                
-                <div id="formCorpo">
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-uppercase">Tipo de Equipamento</label>
-                        <input type="text" id="tipo" list="lista-equipamentos" class="form-control" 
-                               placeholder="🔍 Clique para buscar ou digite..." onchange="puxarPerguntas()">
-                        <datalist id="lista-equipamentos"></datalist>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-uppercase">Nº Patrimônio / Tag</label>
-                        <input type="text" id="patri" list="lista-patrimonios" class="form-control" placeholder="Ex: GER-001">
-                        <datalist id="lista-patrimonios"></datalist>
-                    </div>
-
-                    <div id="listaPerguntas" class="mb-4"></div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-uppercase">Assinatura Digital</label>
-                        <div class="canvas-container" id="canvas-wrapper">
-                            <canvas id="canvas-assinatura" style="width: 100%; height: 100%; cursor: crosshair; touch-action: none;"></canvas>
-                        </div>
-                        <div class="d-flex justify-content-end mt-2">
-                            <button class="btn btn-sm btn-outline-secondary fw-bold" onclick="limparAssinatura()" style="font-size: 0.75rem;">Limpar Quadro</button>
-                        </div>
-                    </div>
-
-                    <button id="btnEnviar" class="btn btn-primary w-100 btn-lg mt-2 shadow fw-bold" onclick="enviar()">SALVAR CHECKLIST</button>
-                </div>
-            </div>
-        </div>
-        
-        <div id="p-historico" class="page container">
-            <div class="card card-custom shadow-lg p-4">
-                <h5 class="mb-4 fw-bold" style="color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
-                    📋 Histórico Mensal
-                </h5>
-                
-                <div class="row g-3 mb-4">
-                    <div class="col-12">
-                        <label class="form-label fw-bold text-uppercase">Mês de Referência</label>
-                        <input type="month" id="filtro-mes" class="form-control" style="color-scheme: dark;">
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label fw-bold text-uppercase">Buscar</label>
-                        <input type="text" id="filtro-busca" class="form-control" placeholder="🔍 Ex: Patrimônio ou Equipamento">
-                    </div>
-                    
-                    <div class="col-12 d-flex gap-2 mt-3">
-                        <button class="btn btn-outline-light flex-grow-1 fw-bold" onclick="carregarHistorico()">ATUALIZAR</button>
-                        <button id="btnAuditoria" class="btn btn-primary flex-grow-1 fw-bold" onclick="gerarPdfFiltroCompleto()" style="display: none;">📊 GERAR PDF MENSAL</button>
-                    </div>
-                </div>
-
-                <div id="listaHistorico" class="mt-2">
-                    <p class="text-center text-muted small mt-4">Carregando dados...</p>
-                </div>
+    <div id="p-dashboard" class="page container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 id="dashNome" class="fw-bold mb-0" style="color: var(--brand-blue);">Olá, Usuário</h5>
+                <span id="dashMatricula" class="text-muted-custom">Matrícula</span>
             </div>
         </div>
 
-        <nav id="main-nav" class="nav-fixed">
-            <button class="btn btn-link text-decoration-none text-light" onclick="showPage('p-formulario')">📝 Novo</button>
-            <button class="btn btn-link text-decoration-none text-light" onclick="showPage('p-historico')">📋 Histórico</button>
-            <button class="btn btn-link text-decoration-none text-danger" onclick="fazerLogout()">🚪 Sair</button>
-        </nav>
+        <div class="progress-container shadow-sm">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="fw-bold fs-6">Progresso Diário</span>
+                <span id="txt-progresso" class="fw-bold text-success">0 / 0</span>
+            </div>
+            <div class="progress">
+                <div id="barra-progresso" class="progress-bar" role="progressbar" style="width: 0%;"></div>
+            </div>
+            <p class="text-muted-custom mt-2 mb-0" style="font-size: 0.75rem;">Equipamentos inspecionados hoje.</p>
+        </div>
+
+        <h6 class="fw-bold text-uppercase mb-3" style="color: var(--text-muted); letter-spacing: 1px;">Meus Equipamentos</h6>
+        
+        <div id="listaMeusEquipamentos">
+            <p class="text-center text-muted-custom mt-5">Carregando sua frota...</p>
+        </div>
+
+        <button class="fab" onclick="abrirModalAdd()">+</button>
+    </div>
+
+    <div id="p-formulario" class="page container">
+        <div class="card p-3 mb-3" style="background: var(--bg-card); border: 1px solid var(--border-color);">
+            <div class="d-flex justify-content-between">
+                <h5 class="fw-bold text-uppercase text-info mb-1" id="formTipoTexto">Equipamento</h5>
+                <button class="btn btn-sm btn-outline-light" onclick="showPage('p-dashboard')">Voltar</button>
+            </div>
+            <span class="text-muted-custom">Patrimônio: <strong class="text-white" id="formPatrimonioTexto">0000</strong></span>
+            
+            <input type="hidden" id="tipo">
+            <input type="hidden" id="patri">
+        </div>
+
+        <div id="listaPerguntas" class="mb-4"></div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold text-uppercase">Assinatura do Operador</label>
+            <div class="canvas-container" id="canvas-wrapper">
+                <canvas id="canvas-assinatura" style="width: 100%; height: 100%; touch-action: none;"></canvas>
+            </div>
+            <div class="d-flex justify-content-end mt-2">
+                <button class="btn btn-sm btn-outline-secondary" onclick="limparAssinatura()">Limpar Assinatura</button>
+            </div>
+        </div>
+        <button id="btnEnviar" class="btn btn-success w-100 btn-lg shadow" onclick="enviarChecklist()">ENVIAR INSPEÇÃO</button>
+    </div>
+
+    <div id="p-historico" class="page container">
+        <h5 class="fw-bold text-uppercase mb-3" style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">📋 Relatórios</h5>
+        <div class="row g-2 mb-3">
+            <div class="col-12">
+                <label class="form-label text-muted-custom">Mês</label>
+                <input type="month" id="filtro-mes" class="form-control" style="color-scheme: dark;">
+            </div>
+            <div class="col-12 mt-2">
+                <button class="btn btn-outline-info w-100 fw-bold" onclick="carregarHistoricoGeral()">BUSCAR REGISTROS</button>
+            </div>
+        </div>
+        <div id="listaHistoricoGeral" class="mt-4"></div>
+    </div>
+
+    <nav id="main-nav" class="nav-fixed">
+        <button id="nav-dash" class="btn btn-link text-decoration-none active" onclick="showPage('p-dashboard')">🏠 Início</button>
+        <button id="nav-hist" class="btn btn-link text-decoration-none" onclick="showPage('p-historico')">📊 Relatórios</button>
+        <button class="btn btn-link text-decoration-none text-danger" onclick="fazerLogout()">🚪 Sair</button>
+    </nav>
+
+    <div id="modalAdd" class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close" onclick="fecharModal('modalAdd')">&times;</button>
+            <h5 class="fw-bold mb-3 text-info">Vincular Equipamento</h5>
+            <p class="text-muted-custom mb-4">Adicione um equipamento à sua rotina diária.</p>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">TIPO DE EQUIPAMENTO</label>
+                <select id="add-tipo" class="form-select">
+                    <option value="">Carregando...</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-bold">Nº PATRIMÔNIO / TAG</label>
+                <input type="text" id="add-patrimonio" class="form-control" placeholder="Ex: GER-001" style="text-transform: uppercase;">
+            </div>
+            <button id="btnSalvarVinculo" class="btn btn-primary w-100 btn-lg" onclick="salvarNovoEquipamento()">ADICIONAR À MINHA LISTA</button>
+        </div>
+    </div>
+
+    <div id="modalDetalhes" class="modal-overlay">
+        <div class="modal-box text-center">
+            <button class="modal-close" onclick="fecharModal('modalDetalhes')">&times;</button>
+            
+            <h5 id="detalheTipo" class="fw-bold mb-1 mt-2 text-info">TIPO</h5>
+            <p class="text-muted-custom mb-4">Patrimônio: <strong id="detalhePatrimonio" class="text-white">000</strong></p>
+            
+            <button class="btn btn-success w-100 btn-lg mb-4 shadow" onclick="iniciarChecklist()" style="padding: 15px; font-size: 1.1rem;">
+                ✅ REALIZAR CHECKLIST
+            </button>
+
+            <div class="text-start border-top pt-3" style="border-color: var(--border-color) !important;">
+                <h6 class="fw-bold text-muted-custom mb-2" style="font-size: 0.8rem;">ÚLTIMAS INSPEÇÕES DESTE ITEM:</h6>
+                <div id="detalheHistoricoLista" style="max-height: 120px; overflow-y: auto; font-size: 0.85rem;">
+                    <p class="text-muted text-center mt-2">Buscando histórico...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // =======================================================
-        // ⚠️ IMPORTANTE: COLE SUA NOVA URL DO GOOGLE APPS SCRIPT AQUI
-        // =======================================================
+        // ==========================================
+        // COLE SUA URL AQUI
+        // ==========================================
         const URL_API = "https://script.google.com/macros/s/AKfycbw2RvbpigVptn_U31RXMlV_UMVgh2idx8Kq_s7cRt4BTrQRUQxUd1Wr2U0ZnEKb167i/exec"; 
         
         window.sessionUser = null;
-        let dadosCarregadosGlobal = {};
+        let equipamentosAtuais = [];
+        let equipamentoSelecionado = null; // Guarda o item clicado no Dashboard
 
-        // --- FUNÇÃO CENTRAL DE API ---
-        async function api(action, data = {}) {
-            const payload = { action: action, ...data };
-            try {
-                const response = await fetch(URL_API, {
-                    method: "POST",
-                    body: JSON.stringify(payload)
-                });
-                return await response.json();
-            } catch (error) {
-                console.error("Erro na API:", error);
-                alert("Erro de conexão. Verifique sua internet.");
-                return null;
-            }
-        }
-
-        // --- INICIALIZAÇÃO E LOGIN ---
-        window.onload = () => {
-            carregarObras();
-            configurarMesAtual();
-        };
-
-        function configurarMesAtual() {
-            const hoje = new Date();
-            const ano = hoje.getFullYear();
-            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-            document.getElementById('filtro-mes').value = `${ano}-${mes}`;
-        }
-
-        async function carregarObras() {
-            const obras = await api('getObras');
-            let sel = document.getElementById('login-obra');
-            sel.innerHTML = '<option value="">Selecione a obra...</option>';
-            if(obras) {
-                obras.forEach(o => sel.innerHTML += `<option value="${o}">${o}</option>`);
-            }
-        }
-
-        async function realizarLogin() {
-            const mat = document.getElementById('login-mat').value;
-            const nasc = document.getElementById('login-nasc').value;
-            const obra = document.getElementById('login-obra').value;
-            const btn = document.getElementById('btnEntrar');
-
-            if(mat.length < 3 || nasc.length < 10 || !obra) {
-                alert("Preencha todos os campos corretamente.");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "Validando credenciais...";
-
-            const res = await api('login', { mat: mat, nasc: nasc });
-
-            if(res && res.success) {
-                window.sessionUser = { nome: res.nome, matricula: mat.trim(), obra: obra };
-                document.getElementById('p-login').style.display = 'none';
-                document.getElementById('app-content').style.display = 'block';
-                document.getElementById('main-nav').style.display = 'flex';
-                showPage('p-formulario');
-            } else {
-                alert("Matrícula ou Data de Nascimento incorretos.");
-                btn.disabled = false;
-                btn.innerText = "ACESSAR SISTEMA";
-            }
-        }
-
-        // --- NAVEGAÇÃO E MÁSCARAS ---
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-            
-            if(id === 'p-formulario') {
-                configurarFormulario();
-            }
-            if(id === 'p-historico') {
-                carregarHistorico(); 
-            }
-        }
-
+        // Máscara de Data
         document.getElementById('login-nasc').addEventListener('input', function (e) {
             let v = e.target.value.replace(/\D/g, '');
             if (v.length > 8) v = v.slice(0, 8);
@@ -270,96 +265,235 @@
             e.target.value = v;
         });
 
+        // Chamada de API Genérica
+        async function api(action, data = {}) {
+            try {
+                const response = await fetch(URL_API, { method: "POST", body: JSON.stringify({ action: action, ...data }) });
+                return await response.json();
+            } catch (e) {
+                console.error(e); alert("Erro de conexão com o servidor."); return null;
+            }
+        }
+
+        window.onload = () => { carregarObras(); };
+
+        // --- LOGIN ---
+        async function carregarObras() {
+            const obras = await api('getObras');
+            let sel = document.getElementById('login-obra');
+            sel.innerHTML = '<option value="">Selecione a obra...</option>';
+            if(obras) obras.forEach(o => sel.innerHTML += `<option value="${o}">${o}</option>`);
+        }
+
+        async function realizarLogin() {
+            const mat = document.getElementById('login-mat').value;
+            const nasc = document.getElementById('login-nasc').value;
+            const obra = document.getElementById('login-obra').value;
+            const btn = document.getElementById('btnEntrar');
+
+            if(mat.length < 3 || nasc.length < 10 || !obra) return alert("Preencha todos os campos.");
+
+            btn.disabled = true; btn.innerText = "Aguarde...";
+            const res = await api('login', { mat: mat, nasc: nasc });
+
+            if(res && res.success) {
+                window.sessionUser = { nome: res.nome, matricula: mat.trim(), obra: obra };
+                document.getElementById('p-login').style.display = 'none';
+                document.getElementById('main-nav').style.display = 'flex';
+                
+                // Configura mês atual para histórico
+                const hoje = new Date();
+                document.getElementById('filtro-mes').value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
+                
+                showPage('p-dashboard');
+            } else {
+                alert("Credenciais incorretas.");
+                btn.disabled = false; btn.innerText = "ACESSAR SISTEMA";
+            }
+        }
+
         function fazerLogout() {
-            if(confirm("Deseja realmente sair do sistema?")) {
-                window.sessionUser = null;
-                document.getElementById('login-mat').value = "";
-                document.getElementById('login-nasc').value = "";
-                document.getElementById('btnEntrar').disabled = false;
-                document.getElementById('btnEntrar').innerText = "ACESSAR SISTEMA";
-                document.getElementById('app-content').style.display = 'none';
-                document.getElementById('main-nav').style.display = 'none';
-                document.getElementById('p-login').style.display = 'flex';
-            }
+            if(confirm("Deseja sair?")) location.reload();
         }
 
-        // --- LÓGICA DO FORMULÁRIO ---
-        async function configurarFormulario() {
-            if (window.sessionUser) {
-                document.getElementById('displayNome').innerText = sessionUser.nome;
-                document.getElementById('displayMatricula').innerText = "Matrícula: " + sessionUser.matricula;
-                document.getElementById('displayObra').innerText = sessionUser.obra || "";
-            }
+        // --- NAVEGAÇÃO E MODAIS ---
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
             
-            const tipos = await api('getTipos');
-            let datalist = document.getElementById('lista-equipamentos');
-            datalist.innerHTML = '';
-            if (tipos) {
-                tipos.forEach(t => {
-                    let option = document.createElement('option');
-                    option.value = t;
-                    datalist.appendChild(option);
-                });
-            }
+            document.getElementById('nav-dash').classList.remove('active');
+            document.getElementById('nav-hist').classList.remove('active');
             
-            carregarPatrimoniosLocais();
-            setTimeout(ajustarCanvas, 300); // Garante que a div renderizou antes de ajustar o canvas
+            if(id === 'p-dashboard') {
+                document.getElementById('nav-dash').classList.add('active');
+                carregarDashboard();
+            } else if (id === 'p-historico') {
+                document.getElementById('nav-hist').classList.add('active');
+            } else if (id === 'p-formulario') {
+                setTimeout(ajustarCanvas, 300);
+            }
+            window.scrollTo(0, 0);
         }
 
-        function carregarPatrimoniosLocais() {
-            let saved = JSON.parse(localStorage.getItem('hist_patrimonios')) || [];
-            let datalist = document.getElementById('lista-patrimonios');
-            datalist.innerHTML = '';
-            saved.forEach(p => {
-                let option = document.createElement('option');
-                option.value = p;
-                datalist.appendChild(option);
-            });
-        }
+        function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        function salvarPatrimonioLocal(novoPatrimonio) {
-            if (!novoPatrimonio) return;
-            let saved = JSON.parse(localStorage.getItem('hist_patrimonios')) || [];
-            if (!saved.includes(novoPatrimonio)) {
-                saved.push(novoPatrimonio);
-                saved.sort(); 
-                localStorage.setItem('hist_patrimonios', JSON.stringify(saved));
-            }
-        }
+        // --- DASHBOARD E VÍNCULOS ---
+        async function carregarDashboard() {
+            document.getElementById('dashNome').innerText = "Olá, " + sessionUser.nome.split(' ')[0];
+            document.getElementById('dashMatricula').innerText = "Matrícula: " + sessionUser.matricula;
+            
+            const div = document.getElementById('listaMeusEquipamentos');
+            div.innerHTML = '<div class="text-center mt-4"><div class="spinner-border text-info"></div></div>';
 
-        async function puxarPerguntas() {
-            let t = document.getElementById('tipo').value;
-            if(!t) { document.getElementById('listaPerguntas').innerHTML = ""; return; }
+            equipamentosAtuais = await api('getMeusEquipamentos', { matricula: sessionUser.matricula });
             
-            document.getElementById('listaPerguntas').innerHTML = "<div class='text-center text-muted mt-3 mb-3'><div class='spinner-border spinner-border-sm'></div> Buscando checklist...</div>";
-            
-            const pergs = await api('getPerguntas', { tipo: t });
-            let div = document.getElementById('listaPerguntas');
-            
-            if (!pergs || pergs.length === 0) {
-                div.innerHTML = "<p class='text-warning small'>Nenhuma pergunta encontrada para este equipamento.</p>";
+            if(!equipamentosAtuais || equipamentosAtuais.length === 0) {
+                div.innerHTML = `<div class="alert mt-3 text-center" style="background: var(--bg-card); border: 1px dashed var(--border-color); color: var(--text-muted);">
+                    Você não possui equipamentos vinculados.<br>Clique no <b>+</b> para adicionar.</div>`;
+                atualizarProgresso(0, 0);
                 return;
             }
 
-            div.innerHTML = `<h6 class="fw-bold mb-3 mt-4" style="color: var(--brand-blue); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">ITENS DE INSPEÇÃO (${pergs.length})</h6>`;
+            let html = "";
+            let concluidos = 0;
+
+            equipamentosAtuais.forEach(eq => {
+                let statusClass = eq.feitoHoje ? "concluido" : "";
+                if(eq.feitoHoje) concluidos++;
+                
+                // Importante: event.stopPropagation() impede que clicar na lixeira abra o card
+                html += `
+                <div class="card-equip ${statusClass}" onclick="abrirDetalhesEquipamento('${eq.patrimonio}', '${eq.tipo}')">
+                    <button class="btn-lixeira" onclick="event.stopPropagation(); removerEquipamento('${eq.patrimonio}')">🗑️</button>
+                    <h6 class="fw-bold mb-1" style="color: ${eq.feitoHoje ? 'var(--success)' : 'var(--text-main)'}">${eq.tipo}</h6>
+                    <span class="text-muted-custom">TAG: <strong class="text-white">${eq.patrimonio}</strong></span>
+                    <div class="mt-2" style="font-size: 0.8rem; font-weight: bold; color: ${eq.feitoHoje ? 'var(--success)' : 'var(--danger)'}">
+                        ${eq.feitoHoje ? '✅ Inspeção do dia concluída' : '⚠️ Pendente de inspeção hoje'}
+                    </div>
+                </div>`;
+            });
+
+            div.innerHTML = html;
+            atualizarProgresso(concluidos, equipamentosAtuais.length);
+        }
+
+        function atualizarProgresso(feito, total) {
+            document.getElementById('txt-progresso').innerText = `${feito} / ${total}`;
+            let pct = total === 0 ? 0 : (feito / total) * 100;
+            document.getElementById('barra-progresso').style.width = pct + '%';
+        }
+
+        async function abrirModalAdd() {
+            abrirModal('modalAdd');
+            document.getElementById('add-patrimonio').value = "";
+            
+            let sel = document.getElementById('add-tipo');
+            if(sel.options.length <= 1) { // Só carrega se estiver vazio
+                const tipos = await api('getTipos');
+                sel.innerHTML = '<option value="">Selecione o equipamento...</option>';
+                if(tipos) tipos.forEach(t => sel.innerHTML += `<option value="${t}">${t}</option>`);
+            }
+        }
+
+        async function salvarNovoEquipamento() {
+            let tipo = document.getElementById('add-tipo').value;
+            let pat = document.getElementById('add-patrimonio').value.trim().toUpperCase();
+            let btn = document.getElementById('btnSalvarVinculo');
+
+            if(!tipo || !pat) return alert("Preencha o tipo e o patrimônio.");
+
+            btn.disabled = true; btn.innerText = "Adicionando...";
+            
+            let payload = { matricula: sessionUser.matricula, nome: sessionUser.nome, patrimonio: pat, tipo: tipo };
+            let res = await api('vincularEquipamento', { payload: payload });
+
+            btn.disabled = false; btn.innerText = "ADICIONAR À MINHA LISTA";
+            
+            if(res && res.status === "OK") {
+                fecharModal('modalAdd');
+                carregarDashboard(); // Recarrega a tela
+            } else {
+                alert("Erro ao vincular. " + (res.msg || ""));
+            }
+        }
+
+        async function removerEquipamento(patrimonio) {
+            if(!confirm(`Deseja remover o equipamento ${patrimonio} da sua lista de rotina?`)) return;
+            
+            let res = await api('removerVinculo', { matricula: sessionUser.matricula, patrimonio: patrimonio });
+            if(res && res.status === "OK") {
+                carregarDashboard();
+            } else {
+                alert("Erro ao remover.");
+            }
+        }
+
+        // --- FLUXO DO CHECKLIST (Modal -> Form) ---
+        async function abrirDetalhesEquipamento(patrimonio, tipo) {
+            equipamentoSelecionado = { patrimonio, tipo };
+            document.getElementById('detalheTipo').innerText = tipo;
+            document.getElementById('detalhePatrimonio').innerText = patrimonio;
+            document.getElementById('detalheHistoricoLista').innerHTML = '<div class="spinner-border spinner-border-sm text-info"></div>';
+            
+            abrirModal('modalDetalhes');
+
+            // Busca histórico rápido deste equipamento específico
+            const res = await api('historico', { filtros: { matricula: sessionUser.matricula, busca: patrimonio }});
+            let divHist = document.getElementById('detalheHistoricoLista');
+            divHist.innerHTML = "";
+
+            if(!res || res.length === 0 || res.error) {
+                divHist.innerHTML = "<span class='text-muted'>Nenhum registro encontrado.</span>";
+            } else {
+                // Pega só os 3 últimos (como o array já vem invertido do servidor, pegamos os 3 primeiros)
+                let unicos = [];
+                res.forEach(r => {
+                    let dataCurta = r.data.split(' ')[0]; // Pega só a data DD/MM/YYYY
+                    if(!unicos.includes(dataCurta) && unicos.length < 3) unicos.push(dataCurta);
+                });
+                unicos.forEach(d => {
+                    divHist.innerHTML += `<div class="mb-1" style="color: var(--text-muted);">➡️ ${d} - <span class="text-success">Enviado</span></div>`;
+                });
+            }
+        }
+
+        async function iniciarChecklist() {
+            fecharModal('modalDetalhes');
+            if(!equipamentoSelecionado) return;
+
+            // Preenche o cabeçalho do formulário
+            document.getElementById('formTipoTexto').innerText = equipamentoSelecionado.tipo;
+            document.getElementById('formPatrimonioTexto').innerText = equipamentoSelecionado.patrimonio;
+            document.getElementById('tipo').value = equipamentoSelecionado.tipo;
+            document.getElementById('patri').value = equipamentoSelecionado.patrimonio;
+            
+            showPage('p-formulario');
+            
+            // Puxa as perguntas
+            const div = document.getElementById('listaPerguntas');
+            div.innerHTML = '<div class="text-center mt-5"><div class="spinner-border text-info"></div><p>Gerando checklist...</p></div>';
+            
+            const pergs = await api('getPerguntas', { tipo: equipamentoSelecionado.tipo });
+            div.innerHTML = "";
 
             pergs.forEach((p, i) => {
                 div.innerHTML += `
-                    <div class="card question-card mb-3 p-3">
-                        <p class="mb-3 fw-bold" style="font-size: 0.9rem;">${p}</p>
+                    <div class="card mb-3 p-3" style="background: var(--bg-body); border: 1px solid var(--border-color);" id="card-p${i}">
+                        <p class="mb-3 fw-bold" style="font-size: 0.95rem;">${p}</p>
                         <div class="d-flex gap-4 mb-1">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="p${i}ok" onclick="selecionarOpcao(this, 'p${i}nok', ${i})" style="transform: scale(1.2); margin-top: 0.2rem;">
+                                <input class="form-check-input" type="checkbox" id="p${i}ok" onclick="selecionarOpcao(this, 'p${i}nok', ${i})" style="transform: scale(1.3);">
                                 <label class="form-check-label text-light ms-1" for="p${i}ok">Conforme (OK)</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="p${i}nok" onclick="selecionarOpcao(this, 'p${i}ok', ${i})" style="transform: scale(1.2); margin-top: 0.2rem;">
-                                <label class="form-check-label text-danger fw-bold ms-1" for="p${i}nok">Não Conforme</label>
+                                <input class="form-check-input" type="checkbox" id="p${i}nok" onclick="selecionarOpcao(this, 'p${i}ok', ${i})" style="transform: scale(1.3);">
+                                <label class="form-check-label text-danger fw-bold ms-1" for="p${i}nok">Falha</label>
                             </div>
                         </div>
                         <div id="campoMotivo${i}" style="display: none;" class="mt-3 pt-3 border-top border-secondary">
-                            <label class="form-label text-warning fw-bold mb-1">Descreva o motivo da falha:</label>
-                            <textarea id="motivo${i}" class="form-control bg-dark border-warning text-light" rows="2"></textarea>
+                            <label class="form-label text-warning mb-1">Motivo / Observação:</label>
+                            <textarea id="motivo${i}" class="form-control text-light" rows="2" style="background: var(--bg-card) !important;"></textarea>
                         </div>
                     </div>`;
             });
@@ -368,294 +502,127 @@
         function selecionarOpcao(source, otherId, index) {
             if (source.checked) {
                 document.getElementById(otherId).checked = false;
-                const campoMotivo = document.getElementById(`campoMotivo${index}`);
-                campoMotivo.style.display = (source.id.includes('nok')) ? 'block' : 'none';
-                if (!source.id.includes('nok')) document.getElementById(`motivo${index}`).value = "";
-            } else {
-                document.getElementById(`campoMotivo${index}`).style.display = 'none';
+                document.getElementById(`campoMotivo${index}`).style.display = (source.id.includes('nok')) ? 'block' : 'none';
             }
         }
 
-        async function enviar() {
-            let patrimonio = document.getElementById('patri').value.toUpperCase().trim();
-            let tipo = document.getElementById('tipo').value;
-            
-            if(!tipo || !patrimonio) { alert("Preencha o Tipo de Equipamento e o Patrimônio."); return; }
-
+        async function enviarChecklist() {
             let resps = [];
             let validado = true;
-            let cards = document.querySelectorAll('.question-card');
             
-            cards.forEach((card, i) => {
+            // Pegamos o número de cards de pergunta renderizados
+            let qtdCards = document.querySelectorAll('[id^="card-p"]').length;
+
+            for(let i=0; i<qtdCards; i++) {
+                let card = document.getElementById(`card-p${i}`);
                 let ok = document.getElementById(`p${i}ok`).checked;
                 let nok = document.getElementById(`p${i}nok`).checked;
                 let motivo = document.getElementById(`motivo${i}`).value.trim();
+                let textoPergunta = card.querySelector('p').innerText;
 
-                if(!ok && !nok) {
-                    validado = false;
-                    card.style.borderColor = "var(--danger)";
-                } else if (nok && motivo === "") {
-                    validado = false;
-                    card.style.borderColor = "#f59e0b"; // warning color
-                    alert(`Descreva o motivo da falha no item: \n"${card.querySelector('p').innerText}"`);
-                } else {
+                if(!ok && !nok) { validado = false; card.style.borderColor = "var(--danger)"; }
+                else if (nok && motivo === "") { validado = false; card.style.borderColor = "#f59e0b"; alert("Descreva o motivo da falha."); }
+                else {
                     card.style.borderColor = "var(--border-color)";
-                    resps.push({
-                        pergunta: card.querySelector('p').innerText,
-                        resposta: ok ? "OK" : "Não OK",
-                        motivo: nok ? motivo : ""
-                    });
+                    resps.push({ pergunta: textoPergunta, resposta: ok ? "OK" : "Não OK", motivo: nok ? motivo : "" });
                 }
-            });
+            }
 
-            if(!validado) return;
-            const blank = document.createElement('canvas');
-            blank.width = canvas.width; blank.height = canvas.height;
-            if (canvas.toDataURL() === blank.toDataURL()) { alert("A assinatura é obrigatória."); return; }
+            if(!validado) return alert("Responda todas as perguntas do checklist.");
+            
+            const blank = document.createElement('canvas'); blank.width = canvas.width; blank.height = canvas.height;
+            if (canvas.toDataURL() === blank.toDataURL()) return alert("Assinatura obrigatória.");
 
-            document.getElementById('btnEnviar').disabled = true;
-            document.getElementById('btnEnviar').innerHTML = "<span class='spinner-border spinner-border-sm'></span> Enviando Dados...";
+            let btn = document.getElementById('btnEnviar');
+            btn.disabled = true; btn.innerHTML = "Enviando...";
 
             let payload = {
                 matricula: sessionUser.matricula, nome: sessionUser.nome, obra: sessionUser.obra,
-                tipoEquipamento: tipo, patrimonio: patrimonio, respostas: resps, assinatura: canvas.toDataURL()
+                tipoEquipamento: equipamentoSelecionado.tipo, patrimonio: equipamentoSelecionado.patrimonio, 
+                respostas: resps, assinatura: canvas.toDataURL()
             };
 
             const result = await api('salvar', { payload: payload });
             
             if(result && result.status === "OK") {
-                salvarPatrimonioLocal(patrimonio);
-                finalizarEnvio();
+                limparAssinatura();
+                alert("✅ Inspeção salva com sucesso!");
+                btn.disabled = false; btn.innerText = "ENVIAR INSPEÇÃO";
+                showPage('p-dashboard'); // Volta pro início e atualiza cards
             } else {
-                alert("Erro ao salvar. Verifique a internet e tente novamente.");
-                document.getElementById('btnEnviar').disabled = false;
-                document.getElementById('btnEnviar').innerText = "SALVAR CHECKLIST";
+                alert("Erro ao salvar.");
+                btn.disabled = false; btn.innerText = "ENVIAR INSPEÇÃO";
             }
         }
 
-        function finalizarEnvio() {
-            document.getElementById('patri').value = "";
-            document.getElementById('tipo').value = "";
-            document.getElementById('listaPerguntas').innerHTML = "";
-            limparAssinatura();
-            const btn = document.getElementById('btnEnviar');
-            btn.disabled = false;
-            btn.innerText = "SALVAR CHECKLIST";
-            alert("✅ Checklist registrado com sucesso!");
-            window.scrollTo({top: 0, behavior: 'smooth'});
-            carregarPatrimoniosLocais();
-        }
-
-        // --- LÓGICA DO HISTÓRICO ---
-        async function carregarHistorico() {
-            const div = document.getElementById('listaHistorico');
-            const btnAuditoria = document.getElementById('btnAuditoria');
+        // --- RELATÓRIOS (APENAS VISUALIZAÇÃO SIMPLES) ---
+        async function carregarHistoricoGeral() {
+            const div = document.getElementById('listaHistoricoGeral');
+            div.innerHTML = "<div class='text-center mt-5'><div class='spinner-border text-info'></div></div>";
             
-            if (!sessionUser) return;
-
-            // Coleta os novos filtros
-            const filtros = {
+            let filtros = {
                 matricula: sessionUser.matricula,
-                mesReferencia: document.getElementById('filtro-mes').value, // Formato YYYY-MM
-                busca: document.getElementById('filtro-busca').value
+                mesReferencia: document.getElementById('filtro-mes').value,
+                busca: ""
             };
-
-            div.innerHTML = "<div class='text-center my-5'><div class='spinner-border text-primary'></div><p class='text-muted mt-2'>Buscando registros...</p></div>";
 
             const dados = await api('historico', { filtros: filtros });
 
             if (!dados || dados.length === 0 || dados.error) {
-                div.innerHTML = `<div class="alert alert-dark border-secondary text-center text-muted" role="alert">Nenhum registro encontrado para <b>${filtros.mesReferencia}</b>.</div>`;
-                btnAuditoria.style.display = 'none';
+                div.innerHTML = `<div class="alert text-center" style="background: var(--bg-card); color: var(--text-muted); border: 1px dashed var(--border-color);">Nenhum registro neste mês.</div>`;
                 return;
             }
 
+            // Agrupa por GrupoId
             let agrupado = {};
             dados.forEach(r => {
-                if (!agrupado[r.grupoId]) {
-                    agrupado[r.grupoId] = { ...r, itens: [] };
-                }
-                agrupado[r.grupoId].itens.push({ p: r.pergunta, r: r.resposta, m: r.motivo });
+                if (!agrupado[r.grupoId]) agrupado[r.grupoId] = { ...r, itens: [] };
+                agrupado[r.grupoId].itens.push(r);
             });
-
-            dadosCarregadosGlobal = agrupado;
-            btnAuditoria.style.display = 'block';
 
             let html = "";
             for (let id in agrupado) {
                 let obj = agrupado[id];
-                let temFalha = obj.itens.some(i => i.r !== "OK" && i.r !== "Conforme (OK)");
-                let safeId = id.replace(/[^a-zA-Z0-9]/g, '');
-                
                 html += `
-                  <div class="card mb-3 question-card" style="border-left: 4px solid ${temFalha ? 'var(--danger)' : 'var(--success)'};">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom border-secondary">
-                          <span class="fw-bold" style="color: var(--brand-blue);">${obj.equipamento}</span>
-                          <span class="text-muted small">${obj.data.split(' ')[0]}</span>
-                        </div>
-                        <div class="mb-1 text-light">Tag/Patrimônio: <strong class="text-white">${obj.patrimonio}</strong></div>
-                        <div class="mb-3 text-muted small">Local: ${obj.obra}</div>
-                        
-                        <button class="btn btn-dark w-100 mb-2 py-2 fw-bold" onclick="toggleDetalhes('${safeId}')" style="background-color: var(--bg-body); border-color: var(--border-color); font-size: 0.8rem;">
-                            VER ITENS AVALIADOS (${obj.itens.length})
-                        </button>
-                        
-                        <div id="detalhe-${safeId}" style="display:none;" class="bg-dark p-3 rounded mb-2 border border-secondary mt-2">
-                          ${obj.itens.map(i => `
-                            <div class="border-bottom border-secondary py-2 mb-1" style="font-size: 0.8rem;">
-                              <div class="d-flex justify-content-between">
-                                <span class="pe-3 text-light">${i.p}</span>
-                                <b class="${(i.r === 'OK' || i.r === 'Conforme (OK)') ? 'text-success' : 'text-danger'}">${i.r}</b>
-                              </div>
-                              ${i.m ? `<div class="text-warning mt-1 fw-bold" style="font-size: 0.75rem;">Obs: ${i.m}</div>` : ''}
-                            </div>
-                          `).join('')}
-                          <div class="mt-3 text-center">
-                              <p class="text-muted mb-1" style="font-size: 0.7rem;">Visto do Operador:</p>
-                              <img src="${obj.assinatura}" style="max-width: 150px; background: white; border-radius: 4px; border: 1px solid #ccc;">
-                          </div>
-                        </div>
-
-                        <button class="btn btn-outline-info w-100 fw-bold mt-1" onclick='prepararPdfIndividual(this, "${id}")' style="font-size: 0.85rem;">📄 COMPARTILHAR PDF</button>
+                <div class="card p-3 mb-3" style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 4px solid var(--brand-blue);">
+                    <div class="d-flex justify-content-between mb-1">
+                        <strong class="text-info">${obj.equipamento}</strong>
+                        <span class="text-muted" style="font-size: 0.8rem;">${obj.data.split(' ')[0]}</span>
                     </div>
-                  </div>`;
+                    <div class="text-white mb-2">TAG: ${obj.patrimonio}</div>
+                    <div class="text-muted-custom" style="font-size: 0.8rem;">Local: ${obj.obra}</div>
+                </div>`;
             }
             div.innerHTML = html;
         }
 
-        function toggleDetalhes(id) {
-            const d = document.getElementById('detalhe-' + id);
-            if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // --- LÓGICA DO PDF ---
-        async function gerarPdfFiltroCompleto() {
-            const lista = Object.values(dadosCarregadosGlobal);
-            if (lista.length === 0) return;
-            enviarParaGeradorPdf(lista, document.getElementById('btnAuditoria'));
-        }
-
-        async function prepararPdfIndividual(elemento, id) {
-            const obj = dadosCarregadosGlobal[id];
-            enviarParaGeradorPdf([obj], elemento);
-        }
-
-        async function enviarParaGeradorPdf(lista, elementoBotao) {
-            const originalText = elementoBotao.innerHTML;
-            elementoBotao.disabled = true;
-            elementoBotao.innerHTML = "<span class='spinner-border spinner-border-sm'></span> Processando Documento...";
-
-            const res = await api('gerarPdf', { lista: lista });
-
-            elementoBotao.disabled = false;
-            elementoBotao.innerHTML = originalText;
-
-            if (res && res.base64) {
-                try {
-                    const byteCharacters = atob(res.base64);
-                    const byteNumbers = new Array(byteCharacters.length);
-                    for (let i = 0; i < byteCharacters.length; i++) {
-                        byteNumbers[i] = byteCharacters.charCodeAt(i);
-                    }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    
-                    let nomeDoc = res.fileName || "Checklist.pdf";
-
-                    const blob = new Blob([byteArray], { type: 'application/pdf' });
-                    const file = new File([blob], nomeDoc, { type: 'application/pdf' });
-
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: nomeDoc,
-                            text: 'Segue relatório de inspeção gerado pelo sistema.'
-                        });
-                    } else {
-                        const fileURL = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = fileURL;
-                        link.download = nomeDoc;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        setTimeout(() => URL.revokeObjectURL(fileURL), 100);
-                    }
-                } catch (e) {
-                    console.error("Erro ao processar PDF:", e);
-                    alert("Não foi possível abrir a janela de compartilhamento nativa. O arquivo pode ter sido baixado.");
-                }
-            } else {
-                alert("Erro ao gerar PDF no servidor.");
-            }
-        }
-
-        // --- LÓGICA DO CANVAS DE ASSINATURA ---
+        // --- CANVAS (ASSINATURA) ---
         let canvas = document.getElementById('canvas-assinatura');
         let ctx = canvas.getContext('2d');
         let desenhando = false;
-        let wrapper = document.getElementById('canvas-wrapper');
 
         function ajustarCanvas() {
             if (!canvas.parentNode) return;
             const rect = canvas.parentNode.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = 160;
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = 2.5;
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
+            canvas.width = rect.width; canvas.height = 160;
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.lineJoin = "round";
         }
 
         window.addEventListener('resize', ajustarCanvas);
-
-        function getMousePos(e) {
+        function getPos(e) {
             const rect = canvas.getBoundingClientRect();
-            let clientX = e.clientX;
-            let clientY = e.clientY;
-            
-            if (e.touches && e.touches.length > 0) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            }
-            
-            return {
-                x: clientX - rect.left,
-                y: clientY - rect.top
-            };
+            let cX = e.clientX, cY = e.clientY;
+            if (e.touches) { cX = e.touches[0].clientX; cY = e.touches[0].clientY; }
+            return { x: cX - rect.left, y: cY - rect.top };
         }
+        function inicia(e) { desenhando = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+        function move(e) { if (!desenhando) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+        function para() { desenhando = false; }
+        function limparAssinatura() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-        function iniciarDesenho(e) { 
-            desenhando = true; 
-            wrapper.classList.add('active');
-            const pos = getMousePos(e); 
-            ctx.beginPath(); 
-            ctx.moveTo(pos.x, pos.y); 
-        }
-        
-        function desenhar(e) { 
-            if (!desenhando) return; 
-            e.preventDefault(); 
-            const pos = getMousePos(e); 
-            ctx.lineTo(pos.x, pos.y); 
-            ctx.stroke(); 
-        }
-        
-        function pararDesenho() { 
-            desenhando = false; 
-            wrapper.classList.remove('active');
-        }
-        
-        function limparAssinatura() { 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
-        }
+        canvas.addEventListener('mousedown', inicia); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', para);
+        canvas.addEventListener('touchstart', inicia, {passive: false}); canvas.addEventListener('touchmove', move, {passive: false}); canvas.addEventListener('touchend', para);
 
-        canvas.addEventListener('mousedown', iniciarDesenho);
-        canvas.addEventListener('mousemove', desenhar);
-        window.addEventListener('mouseup', pararDesenho);
-        canvas.addEventListener('touchstart', iniciarDesenho, {passive: false});
-        canvas.addEventListener('touchmove', desenhar, {passive: false});
-        canvas.addEventListener('touchend', pararDesenho);
     </script>
 </body>
 </html>

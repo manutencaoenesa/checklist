@@ -17,6 +17,7 @@
             --brand-blue-hover: #0284c7;
             --success: #10b981;      /* Verde vibrante */
             --danger: #ef4444;       /* Vermelho vibrante */
+            --warning: #f59e0b;      /* Laranja/Amarelo vibrante */
         }
 
         body { 
@@ -194,12 +195,9 @@
                 <input type="month" id="filtro-mes" class="form-control" style="color-scheme: dark;">
             </div>
             <div class="col-12 mt-2 d-grid gap-2">
-    <button class="btn btn-outline-info fw-bold" onclick="carregarHistoricoGeral()">BUSCAR REGISTROS</button>
-    
-    <button id="btnPdfMensal" class="btn btn-success fw-bold" onclick="baixarRelatorioMensal()">
-        📥 GERAR PDF MENSAL (COMPILADO)
-    </button>
-</div>
+                <button class="btn btn-outline-info fw-bold" onclick="carregarHistoricoGeral()">BUSCAR REGISTROS</button>
+                <button id="btnPdfMensal" class="btn btn-success fw-bold" onclick="baixarRelatorioMensal()">📥 GERAR PDF MENSAL (COMPILADO)</button>
+            </div>
         </div>
         <div id="listaHistoricoGeral" class="mt-4"></div>
     </div>
@@ -233,7 +231,6 @@
     <div id="modalDetalhes" class="modal-overlay">
         <div class="modal-box text-center">
             <button class="modal-close" onclick="fecharModal('modalDetalhes')">&times;</button>
-            
             <h5 id="detalheTipo" class="fw-bold mb-1 mt-2 text-info">TIPO</h5>
             <p class="text-muted-custom mb-4">Patrimônio: <strong id="detalhePatrimonio" class="text-white">000</strong></p>
             
@@ -250,6 +247,14 @@
         </div>
     </div>
 
+    <div id="modalFeedback" class="modal-overlay">
+        <div class="modal-box text-center">
+            <h4 id="feedbackTitulo" class="fw-bold mb-3">Título</h4>
+            <p id="feedbackMensagem" class="text-muted-custom mb-4" style="font-size: 1.05rem;">Mensagem</p>
+            <button class="btn btn-primary w-100 btn-lg shadow" onclick="fecharFeedbackEVoltar()">ENTENDIDO</button>
+        </div>
+    </div>
+
     <script>
         // ==========================================
         // COLE SUA URL AQUI
@@ -258,9 +263,8 @@
         
         window.sessionUser = null;
         let equipamentosAtuais = [];
-        let equipamentoSelecionado = null; // Guarda o item clicado no Dashboard
+        let equipamentoSelecionado = null; 
 
-        // Máscara de Data
         document.getElementById('login-nasc').addEventListener('input', function (e) {
             let v = e.target.value.replace(/\D/g, '');
             if (v.length > 8) v = v.slice(0, 8);
@@ -269,7 +273,6 @@
             e.target.value = v;
         });
 
-        // Chamada de API Genérica
         async function api(action, data = {}) {
             try {
                 const response = await fetch(URL_API, { method: "POST", body: JSON.stringify({ action: action, ...data }) });
@@ -281,7 +284,6 @@
 
         window.onload = () => { carregarObras(); };
 
-        // --- LOGIN ---
         async function carregarObras() {
             const obras = await api('getObras');
             let sel = document.getElementById('login-obra');
@@ -305,7 +307,6 @@
                 document.getElementById('p-login').style.display = 'none';
                 document.getElementById('main-nav').style.display = 'flex';
                 
-                // Configura mês atual para histórico
                 const hoje = new Date();
                 document.getElementById('filtro-mes').value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
                 
@@ -320,7 +321,6 @@
             if(confirm("Deseja sair?")) location.reload();
         }
 
-        // --- NAVEGAÇÃO E MODAIS ---
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
             document.getElementById(id).style.display = 'block';
@@ -342,7 +342,6 @@
         function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // --- DASHBOARD E VÍNCULOS ---
         async function carregarDashboard() {
             document.getElementById('dashNome').innerText = "Olá, " + sessionUser.nome.split(' ')[0];
             document.getElementById('dashMatricula').innerText = "Matrícula: " + sessionUser.matricula;
@@ -366,7 +365,6 @@
                 let statusClass = eq.feitoHoje ? "concluido" : "";
                 if(eq.feitoHoje) concluidos++;
                 
-                // Importante: event.stopPropagation() impede que clicar na lixeira abra o card
                 html += `
                 <div class="card-equip ${statusClass}" onclick="abrirDetalhesEquipamento('${eq.patrimonio}', '${eq.tipo}')">
                     <button class="btn-lixeira" onclick="event.stopPropagation(); removerEquipamento('${eq.patrimonio}')">🗑️</button>
@@ -393,35 +391,36 @@
             document.getElementById('add-patrimonio').value = "";
             
             let sel = document.getElementById('add-tipo');
-            if(sel.options.length <= 1) { // Só carrega se estiver vazio
+            if(sel.options.length <= 1) { 
                 const tipos = await api('getTipos');
                 sel.innerHTML = '<option value="">Selecione o equipamento...</option>';
                 if(tipos) tipos.forEach(t => sel.innerHTML += `<option value="${t}">${t}</option>`);
             }
         }
-async function baixarRelatorioMensal() {
-    const mesAno = document.getElementById('filtro-mes').value; // O input type="month"
-    if (!mesAno) return alert("Por favor, selecione o mês.");
 
-    const btn = event.target;
-    btn.disabled = true;
-    btn.innerText = "Gerando PDF...";
+        async function baixarRelatorioMensal() {
+            const mesAno = document.getElementById('filtro-mes').value;
+            if (!mesAno) return alert("Por favor, selecione o mês.");
 
-    const res = await api('gerarRelatorioMensal', { 
-        matricula: window.sessionUser.matricula, 
-        mesAno: mesAno 
-    });
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerText = "Gerando PDF...";
 
-    if (res && res.status === "OK") {
-        // Abre o PDF em uma nova aba para o usuário salvar ou compartilhar
-        window.open(res.url, '_blank');
-    } else {
-        alert("Erro: " + (res.msg || "Falha ao gerar relatório"));
-    }
+            const res = await api('gerarRelatorioMensal', { 
+                matricula: window.sessionUser.matricula, 
+                mesAno: mesAno 
+            });
 
-    btn.disabled = false;
-    btn.innerText = "GERAR PDF COMPLETO";
-}
+            if (res && res.status === "OK") {
+                window.open(res.url, '_blank');
+            } else {
+                alert("Erro: " + (res.msg || "Falha ao gerar relatório"));
+            }
+
+            btn.disabled = false;
+            btn.innerText = "GERAR PDF COMPLETO";
+        }
+
         async function salvarNovoEquipamento() {
             let tipo = document.getElementById('add-tipo').value;
             let pat = document.getElementById('add-patrimonio').value.trim().toUpperCase();
@@ -438,7 +437,7 @@ async function baixarRelatorioMensal() {
             
             if(res && res.status === "OK") {
                 fecharModal('modalAdd');
-                carregarDashboard(); // Recarrega a tela
+                carregarDashboard();
             } else {
                 alert("Erro ao vincular. " + (res.msg || ""));
             }
@@ -455,7 +454,6 @@ async function baixarRelatorioMensal() {
             }
         }
 
-        // --- FLUXO DO CHECKLIST (Modal -> Form) ---
         async function abrirDetalhesEquipamento(patrimonio, tipo) {
             equipamentoSelecionado = { patrimonio, tipo };
             document.getElementById('detalheTipo').innerText = tipo;
@@ -464,7 +462,6 @@ async function baixarRelatorioMensal() {
             
             abrirModal('modalDetalhes');
 
-            // Busca histórico rápido deste equipamento específico
             const res = await api('historico', { filtros: { matricula: sessionUser.matricula, busca: patrimonio }});
             let divHist = document.getElementById('detalheHistoricoLista');
             divHist.innerHTML = "";
@@ -472,10 +469,9 @@ async function baixarRelatorioMensal() {
             if(!res || res.length === 0 || res.error) {
                 divHist.innerHTML = "<span class='text-muted'>Nenhum registro encontrado.</span>";
             } else {
-                // Pega só os 3 últimos (como o array já vem invertido do servidor, pegamos os 3 primeiros)
                 let unicos = [];
                 res.forEach(r => {
-                    let dataCurta = r.data.split(' ')[0]; // Pega só a data DD/MM/YYYY
+                    let dataCurta = r.data.split(' ')[0];
                     if(!unicos.includes(dataCurta) && unicos.length < 3) unicos.push(dataCurta);
                 });
                 unicos.forEach(d => {
@@ -488,7 +484,6 @@ async function baixarRelatorioMensal() {
             fecharModal('modalDetalhes');
             if(!equipamentoSelecionado) return;
 
-            // Preenche o cabeçalho do formulário
             document.getElementById('formTipoTexto').innerText = equipamentoSelecionado.tipo;
             document.getElementById('formPatrimonioTexto').innerText = equipamentoSelecionado.patrimonio;
             document.getElementById('tipo').value = equipamentoSelecionado.tipo;
@@ -496,7 +491,6 @@ async function baixarRelatorioMensal() {
             
             showPage('p-formulario');
             
-            // Puxa as perguntas
             const div = document.getElementById('listaPerguntas');
             div.innerHTML = '<div class="text-center mt-5"><div class="spinner-border text-info"></div><p>Gerando checklist...</p></div>';
             
@@ -532,11 +526,14 @@ async function baixarRelatorioMensal() {
             }
         }
 
+        // ===============================================
+        // LÓGICA DE ENVIO COM FEEDBACK DE SEGURANÇA
+        // ===============================================
         async function enviarChecklist() {
             let resps = [];
             let validado = true;
+            let temFalha = false; // Flag para identificar se há problema no equipamento
             
-            // Pegamos o número de cards de pergunta renderizados
             let qtdCards = document.querySelectorAll('[id^="card-p"]').length;
 
             for(let i=0; i<qtdCards; i++) {
@@ -547,20 +544,24 @@ async function baixarRelatorioMensal() {
                 let textoPergunta = card.querySelector('p').innerText;
 
                 if(!ok && !nok) { validado = false; card.style.borderColor = "var(--danger)"; }
-                else if (nok && motivo === "") { validado = false; card.style.borderColor = "#f59e0b"; alert("Descreva o motivo da falha."); }
+                else if (nok && motivo === "") { validado = false; card.style.borderColor = "var(--warning)"; alert("Descreva o motivo da falha."); }
                 else {
                     card.style.borderColor = "var(--border-color)";
+                    
+                    // Se estiver nok, marcamos a flag como verdadeira
+                    if(nok) temFalha = true;
+                    
                     resps.push({ pergunta: textoPergunta, resposta: ok ? "OK" : "Não OK", motivo: nok ? motivo : "" });
                 }
             }
 
-            if(!validado) return alert("Responda todas as perguntas do checklist.");
+            if(!validado) return alert("Responda todas as perguntas do checklist antes de enviar.");
             
             const blank = document.createElement('canvas'); blank.width = canvas.width; blank.height = canvas.height;
-            if (canvas.toDataURL() === blank.toDataURL()) return alert("Assinatura obrigatória.");
+            if (canvas.toDataURL() === blank.toDataURL()) return alert("Assinatura obrigatória para validação.");
 
             let btn = document.getElementById('btnEnviar');
-            btn.disabled = true; btn.innerHTML = "Enviando...";
+            btn.disabled = true; btn.innerHTML = "Enviando Inspeção...";
 
             let payload = {
                 matricula: sessionUser.matricula, nome: sessionUser.nome, obra: sessionUser.obra,
@@ -572,13 +573,37 @@ async function baixarRelatorioMensal() {
             
             if(result && result.status === "OK") {
                 limparAssinatura();
-                alert("✅ Inspeção salva com sucesso!");
                 btn.disabled = false; btn.innerText = "ENVIAR INSPEÇÃO";
-                showPage('p-dashboard'); // Volta pro início e atualiza cards
+                
+                // Mapeia os elementos do modal
+                let titulo = document.getElementById('feedbackTitulo');
+                let msg = document.getElementById('feedbackMensagem');
+
+                if(temFalha) {
+                    // Modal de Alerta
+                    titulo.innerHTML = "⚠️ Atenção Necessária";
+                    titulo.style.color = "var(--warning)";
+                    msg.innerHTML = `A inspeção foi registrada no sistema, mas identificamos <strong>falhas</strong> em um ou mais itens deste equipamento.<br><br>Por favor, <strong>notifique o seu encarregado imediatamente</strong>.<br><br>Verifique a possibilidade de realizar a troca da ferramenta no almoxarifado ou solicitar o conserto para garantir a segurança de todos na operação.`;
+                } else {
+                    // Modal de Sucesso
+                    titulo.innerHTML = "✅ Inspeção Aprovada";
+                    titulo.style.color = "var(--success)";
+                    msg.innerHTML = "Checklist enviado e salvo com sucesso!<br><br>Nenhuma falha foi reportada. O equipamento está em boas condições e liberado para uso.";
+                }
+
+                // Abre o modal de aviso ao invés do alert nativo
+                abrirModal('modalFeedback');
+
             } else {
-                alert("Erro ao salvar.");
+                alert("Ocorreu um erro ao salvar a inspeção. Tente novamente.");
                 btn.disabled = false; btn.innerText = "ENVIAR INSPEÇÃO";
             }
+        }
+
+        // Função chamada pelo botão do modal de feedback
+        function fecharFeedbackEVoltar() {
+            fecharModal('modalFeedback');
+            showPage('p-dashboard');
         }
 
         // --- RELATÓRIOS (APENAS VISUALIZAÇÃO SIMPLES) ---
@@ -599,7 +624,6 @@ async function baixarRelatorioMensal() {
                 return;
             }
 
-            // Agrupa por GrupoId
             let agrupado = {};
             dados.forEach(r => {
                 if (!agrupado[r.grupoId]) agrupado[r.grupoId] = { ...r, itens: [] };

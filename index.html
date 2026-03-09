@@ -395,7 +395,29 @@
                 if(tipos) tipos.forEach(t => sel.innerHTML += `<option value="${t}">${t}</option>`);
             }
         }
+async function baixarRelatorioMensal() {
+    const mesAno = document.getElementById('filtro-mes').value; // O input type="month"
+    if (!mesAno) return alert("Por favor, selecione o mês.");
 
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerText = "Gerando PDF...";
+
+    const res = await api('gerarRelatorioMensal', { 
+        matricula: window.sessionUser.matricula, 
+        mesAno: mesAno 
+    });
+
+    if (res && res.status === "OK") {
+        // Abre o PDF em uma nova aba para o usuário salvar ou compartilhar
+        window.open(res.url, '_blank');
+    } else {
+        alert("Erro: " + (res.msg || "Falha ao gerar relatório"));
+    }
+
+    btn.disabled = false;
+    btn.innerText = "GERAR PDF COMPLETO";
+}
         async function salvarNovoEquipamento() {
             let tipo = document.getElementById('add-tipo').value;
             let pat = document.getElementById('add-patrimonio').value.trim().toUpperCase();

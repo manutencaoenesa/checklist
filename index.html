@@ -663,12 +663,30 @@
         let ctx = canvas.getContext('2d');
         let desenhando = false;
 
-        function ajustarCanvas() {
-            if (!canvas.parentNode) return;
-            const rect = canvas.parentNode.getBoundingClientRect();
-            canvas.width = rect.width; canvas.height = 160;
-            ctx.strokeStyle = "#000"; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.lineJoin = "round";
-        }
+      // Substitua sua função ajustarCanvas por esta para evitar perda de dados:
+function ajustarCanvas() {
+    if (!canvas.parentNode) return;
+    const rect = canvas.parentNode.getBoundingClientRect();
+    
+    // Só redimensiona se a largura mudou (evita limpar ao abrir teclado)
+    if (canvas.width !== rect.width) {
+        // Salva o conteúdo atual se houver
+        const tempContent = canvas.toDataURL();
+        canvas.width = rect.width;
+        canvas.height = 160;
+        
+        // Re-aplica estilos que são resetados ao mudar width
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        
+        // Tenta restaurar o desenho (opcional)
+        let img = new Image();
+        img.src = tempContent;
+        img.onload = () => ctx.drawImage(img, 0, 0);
+    }
+}
 
         window.addEventListener('resize', ajustarCanvas);
         function getPos(e) {

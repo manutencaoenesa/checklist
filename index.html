@@ -255,6 +255,21 @@
         </div>
     </div>
 
+    <div id="modalPdf" class="modal-overlay">
+        <div class="modal-box text-center">
+            <button id="btnCloseModalPdf" class="modal-close" onclick="fecharModal('modalPdf')" style="display: none;">&times;</button>
+            <h5 class="fw-bold mb-3 text-info" id="pdfModalTitle" style="color: var(--brand-blue) !important;">Gerando Relatório...</h5>
+            
+            <div id="pdfModalLoader" class="my-4">
+                <div class="spinner-border" style="width: 3rem; height: 3rem; color: var(--brand-blue);" role="status"></div>
+                <p class="text-muted-custom mt-3">Isso pode levar alguns minutos.<br>Por favor, não feche ou saia desta página.</p>
+            </div>
+            
+            <div id="pdfModalResult" style="display: none; width: 100%;">
+                </div>
+        </div>
+    </div>
+
     <script>
         // ==========================================
         // COLE SUA URL AQUI
@@ -274,25 +289,20 @@
         });
 
         async function api(action, data = {}) {
-    try {
-        const response = await fetch(URL_API, { 
-            method: "POST", 
-            // 1. O Content-Type como text/plain burla o bloqueio de CORS do Google
-            headers: {
-                "Content-Type": "text/plain;charset=utf-8"
-            },
-            body: JSON.stringify({ action: action, ...data }),
-            // 2. O redirect 'follow' garante que o Vercel acompanhe a rota do Apps Script
-            redirect: "follow" 
-        });
-        
-        return await response.json();
-    } catch (e) {
-        console.error("Erro no Fetch:", e); 
-        alert("Falha na comunicação com a base de dados. Verifique sua conexão."); 
-        return null;
-    }
-}
+            try {
+                const response = await fetch(URL_API, { 
+                    method: "POST", 
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: action, ...data }),
+                    redirect: "follow" 
+                });
+                return await response.json();
+            } catch (e) {
+                console.error("Erro no Fetch:", e); 
+                alert("Falha na comunicação com a base de dados. Verifique sua conexão."); 
+                return null;
+            }
+        }
 
         window.onload = () => { carregarObras(); };
 
@@ -410,27 +420,51 @@
             }
         }
 
+        // ==========================================
+        // LÓGICA ATUALIZADA DO PDF (MENSAL)
+        // ==========================================
         async function baixarRelatorioMensal() {
             const mesAno = document.getElementById('filtro-mes').value;
             if (!mesAno) return alert("Por favor, selecione o mês.");
 
-            const btn = event.target;
-            btn.disabled = true;
-            btn.innerText = "Gerando PDF...";
+            // Abre o modal sobreposto para segurar o usuário na tela
+            abrirModal('modalPdf');
+            
+            // Configura o visual de "Carregando"
+            document.getElementById('pdfModalTitle').innerText = "Gerando Relatório...";
+            document.getElementById('pdfModalTitle').style.color = "var(--brand-blue)";
+            document.getElementById('pdfModalLoader').style.display = "block";
+            document.getElementById('pdfModalResult').style.display = "none";
+            document.getElementById('btnCloseModalPdf').style.display = "none";
 
             const res = await api('gerarRelatorioMensal', { 
                 matricula: window.sessionUser.matricula, 
                 mesAno: mesAno 
             });
 
-            if (res && res.status === "OK") {
-                window.open(res.url, '_blank');
-            } else {
-                alert("Erro: " + (res.msg || "Falha ao gerar relatório"));
-            }
+            // Esconde o carregamento e prepara para mostrar o resultado
+            document.getElementById('pdfModalLoader').style.display = "none";
+            document.getElementById('btnCloseModalPdf').style.display = "block";
+            const divResult = document.getElementById('pdfModalResult');
+            divResult.style.display = "block";
 
-            btn.disabled = false;
-            btn.innerText = "GERAR PDF COMPLETO";
+            if (res && res.status === "OK") {
+                // Sucesso: Cria o botão para download
+                document.getElementById('pdfModalTitle').innerText = "✅ Concluído!";
+                document.getElementById('pdfModalTitle').style.color = "var(--success)";
+                divResult.innerHTML = `
+                    <p class="text-muted-custom mb-4">O arquivo PDF contendo todas as inspeções do mês foi gerado com sucesso.</p>
+                    <a href="${res.url}" target="_blank" class="btn btn-success w-100 btn-lg shadow">📄 VISUALIZAR / BAIXAR PDF</a>
+                `;
+            } else {
+                // Erro: Mostra o erro retornado pela API
+                document.getElementById('pdfModalTitle').innerText = "⚠️ Erro na Geração";
+                document.getElementById('pdfModalTitle').style.color = "var(--danger)";
+                divResult.innerHTML = `
+                    <p class="text-danger mb-4">${res.msg || "Houve uma falha de comunicação ou limite de tempo excedido."}</p>
+                    <button class="btn btn-outline-secondary w-100" onclick="fecharModal('modalPdf')">FECHAR</button>
+                `;
+            }
         }
 
         async function salvarNovoEquipamento() {
@@ -538,13 +572,10 @@
             }
         }
 
-        // ===============================================
-        // LÓGICA DE ENVIO COM FEEDBACK DE SEGURANÇA
-        // ===============================================
         async function enviarChecklist() {
             let resps = [];
             let validado = true;
-            let temFalha = false; // Flag para identificar se há problema no equipamento
+            let temFalha = false; 
             
             let qtdCards = document.querySelectorAll('[id^="card-p"]').length;
 
@@ -559,10 +590,7 @@
                 else if (nok && motivo === "") { validado = false; card.style.borderColor = "var(--warning)"; alert("Descreva o motivo da falha."); }
                 else {
                     card.style.borderColor = "var(--border-color)";
-                    
-                    // Se estiver nok, marcamos a flag como verdadeira
                     if(nok) temFalha = true;
-                    
                     resps.push({ pergunta: textoPergunta, resposta: ok ? "OK" : "Não OK", motivo: nok ? motivo : "" });
                 }
             }
@@ -587,23 +615,19 @@
                 limparAssinatura();
                 btn.disabled = false; btn.innerText = "ENVIAR INSPEÇÃO";
                 
-                // Mapeia os elementos do modal
                 let titulo = document.getElementById('feedbackTitulo');
                 let msg = document.getElementById('feedbackMensagem');
 
                 if(temFalha) {
-                    // Modal de Alerta
                     titulo.innerHTML = "⚠️ Atenção Necessária";
                     titulo.style.color = "var(--warning)";
                     msg.innerHTML = `A inspeção foi registrada no sistema, mas identificamos <strong>falhas</strong> em um ou mais itens deste equipamento.<br><br>Por favor, <strong>notifique o seu encarregado imediatamente</strong>.<br><br>Verifique a possibilidade de realizar a troca da ferramenta no almoxarifado ou solicitar o conserto para garantir a segurança de todos na operação.`;
                 } else {
-                    // Modal de Sucesso
                     titulo.innerHTML = "✅ Inspeção Aprovada";
                     titulo.style.color = "var(--success)";
                     msg.innerHTML = "Checklist enviado e salvo com sucesso!<br><br>Nenhuma falha foi reportada. O equipamento está em boas condições e liberado para uso.";
                 }
 
-                // Abre o modal de aviso ao invés do alert nativo
                 abrirModal('modalFeedback');
 
             } else {
@@ -612,13 +636,11 @@
             }
         }
 
-        // Função chamada pelo botão do modal de feedback
         function fecharFeedbackEVoltar() {
             fecharModal('modalFeedback');
             showPage('p-dashboard');
         }
 
-        // --- RELATÓRIOS (APENAS VISUALIZAÇÃO SIMPLES) ---
         async function carregarHistoricoGeral() {
             const div = document.getElementById('listaHistoricoGeral');
             div.innerHTML = "<div class='text-center mt-5'><div class='spinner-border text-info'></div></div>";
@@ -658,35 +680,29 @@
             div.innerHTML = html;
         }
 
-        // --- CANVAS (ASSINATURA) ---
         let canvas = document.getElementById('canvas-assinatura');
         let ctx = canvas.getContext('2d');
         let desenhando = false;
 
-      // Substitua sua função ajustarCanvas por esta para evitar perda de dados:
-function ajustarCanvas() {
-    if (!canvas.parentNode) return;
-    const rect = canvas.parentNode.getBoundingClientRect();
-    
-    // Só redimensiona se a largura mudou (evita limpar ao abrir teclado)
-    if (canvas.width !== rect.width) {
-        // Salva o conteúdo atual se houver
-        const tempContent = canvas.toDataURL();
-        canvas.width = rect.width;
-        canvas.height = 160;
-        
-        // Re-aplica estilos que são resetados ao mudar width
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = 2.5;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        
-        // Tenta restaurar o desenho (opcional)
-        let img = new Image();
-        img.src = tempContent;
-        img.onload = () => ctx.drawImage(img, 0, 0);
-    }
-}
+        function ajustarCanvas() {
+            if (!canvas.parentNode) return;
+            const rect = canvas.parentNode.getBoundingClientRect();
+            
+            if (canvas.width !== rect.width) {
+                const tempContent = canvas.toDataURL();
+                canvas.width = rect.width;
+                canvas.height = 160;
+                
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                
+                let img = new Image();
+                img.src = tempContent;
+                img.onload = () => ctx.drawImage(img, 0, 0);
+            }
+        }
 
         window.addEventListener('resize', ajustarCanvas);
         function getPos(e) {
